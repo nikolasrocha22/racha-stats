@@ -36,10 +36,8 @@ export default function PlayerCard({ player, stats, title, onClick }) {
   // PHY (Physical): High for defenders and based on games played
   const phy = Math.round(50 + Math.min(40, games * 4) + (player.position === 'Zagueiro' ? 10 : 0));
 
-  // OVR (Overall rating)
-  const ovr = games > 0 
-    ? Math.min(99, Math.round((pac + sho + pas + dri + def + phy) / 6))
-    : 50;
+  // OVR (Overall rating): Dynamic OVR from stats, or initialOvr as fallback
+  const ovr = stats?.currentOvr ?? player.initialOvr ?? 60;
 
   return (
     <div className={`player-card-fut ${tier}`} onClick={onClick} role="button" tabIndex={0}>

@@ -68,16 +68,16 @@ export const db = {
   players: {
     toArray: async () => {
       const { data } = await supabase.from('players').select('*').order('name');
-      return (data || []).map(p => ({ ...p, id: Number(p.id), photo: p.photo_url }));
+      return (data || []).map(p => ({ ...p, id: Number(p.id), photo: p.photo_url, initialOvr: Number(p.initial_ovr || 60) }));
     },
     get: async (id) => {
       const { data } = await supabase.from('players').select('*').eq('id', id).maybeSingle();
-      return data ? { ...data, id: Number(data.id), photo: data.photo_url } : null;
+      return data ? { ...data, id: Number(data.id), photo: data.photo_url, initialOvr: Number(data.initial_ovr || 60) } : null;
     },
     orderBy: (field) => ({
       toArray: async () => {
         const { data } = await supabase.from('players').select('*').order(field);
-        return (data || []).map(p => ({ ...p, id: Number(p.id), photo: p.photo_url }));
+        return (data || []).map(p => ({ ...p, id: Number(p.id), photo: p.photo_url, initialOvr: Number(p.initial_ovr || 60) }));
       }
     })
   },
@@ -131,7 +131,7 @@ export const db = {
 
 // ── CRUD Helpers ──
 
-export async function addPlayer({ name, nickname, photo, position, user_id = null }) {
+export async function addPlayer({ name, nickname, photo, position, user_id = null, initialOvr = 60 }) {
   const { data, error } = await supabase
     .from('players')
     .insert([{
@@ -139,7 +139,8 @@ export async function addPlayer({ name, nickname, photo, position, user_id = nul
       nickname: nickname || '',
       photo_url: photo || '',
       position: position || '',
-      user_id
+      user_id,
+      initial_ovr: initialOvr
     }])
     .select()
     .single();
@@ -153,6 +154,10 @@ export async function updatePlayer(id, changes) {
   if ('photo' in changes) {
     mapped.photo_url = changes.photo;
     delete mapped.photo;
+  }
+  if ('initialOvr' in changes) {
+    mapped.initial_ovr = changes.initialOvr;
+    delete mapped.initialOvr;
   }
   const { error } = await supabase.from('players').update(mapped).eq('id', id);
   if (error) throw error;

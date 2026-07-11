@@ -3,12 +3,15 @@ import { db } from '../db';
 /**
  * Compute full stats for a single player
  */
-export async function getPlayerStats(playerId) {
+export async function getPlayerStats(playerId, playerObj = null) {
   const allLineups = await db.lineups.toArray();
   const lineups = allLineups.filter(l => l.playerId === playerId);
   const allGoals = await db.goals.toArray();
   const allMatches = await db.matches.toArray();
   const matchMap = Object.fromEntries(allMatches.map(m => [m.id, m]));
+
+  const player = playerObj || (await db.players.get(playerId));
+  const initialOvr = player?.initialOvr ?? 60;
 
   let games = 0, wins = 0, draws = 0, losses = 0, goals = 0, assists = 0;
 
@@ -31,7 +34,10 @@ export async function getPlayerStats(playerId) {
 
   const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
 
-  return { playerId, games, wins, draws, losses, goals, assists, winRate };
+  // Calculate current dynamic OVR
+  const currentOvr = Math.max(40, Math.min(99, Math.round(initialOvr + (wins * 1.5) - (losses * 1.5) + (goals * 0.5) + (assists * 0.3))));
+
+  return { playerId, games, wins, draws, losses, goals, assists, winRate, initialOvr, currentOvr };
 }
 
 /**
@@ -41,7 +47,7 @@ export async function getAllPlayerStats() {
   const players = await db.players.toArray();
   const stats = [];
   for (const p of players) {
-    const s = await getPlayerStats(p.id);
+    const s = await getPlayerStats(p.id, p);
     stats.push({ ...s, player: p });
   }
   return stats;

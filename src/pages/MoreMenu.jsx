@@ -45,7 +45,7 @@ export default function MoreMenu() {
         {user ? (
           <button className="btn btn-danger btn-sm" onClick={handleLogout}>Sair</button>
         ) : (
-          <button className="btn btn-primary btn-sm" onClick={() => navigate('/settings')}>Fazer Login</button>
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/login')}>Fazer Login</button>
         )}
       </div>
 

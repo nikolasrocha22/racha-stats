@@ -20,27 +20,16 @@ export default function PlayerCard({ player, stats, title, onClick }) {
   };
   const posCode = posMap[player.position] || 'SUB';
 
-  // Calculate FUT attributes dynamically
-  const games = stats?.games || 0;
-  const winRate = stats?.winRate || 0;
-  const goals = stats?.goals || 0;
-  const assists = stats?.assists || 0;
+  // Get evolved stats or fall back to player's manually set initial values
+  const pac = stats?.pac ?? player.initialPac ?? 60;
+  const sho = stats?.sho ?? player.initialSho ?? 60;
+  const pas = stats?.pas ?? player.initialPas ?? 60;
+  const dri = stats?.dri ?? player.initialDri ?? 60;
+  const def = stats?.def ?? player.initialDef ?? 60;
+  const phy = stats?.phy ?? player.initialPhy ?? 60;
 
-  const pac = Math.round(55 + (winRate * 0.2) + (player.position === 'Atacante' || player.position === 'Meio-Campo' ? 15 : 0));
-  const sho = Math.round(40 + Math.min(50, (goals / Math.max(1, games)) * 30) + (player.position === 'Atacante' ? 15 : 0));
-  const pas = Math.round(45 + Math.min(45, (assists / Math.max(1, games)) * 40) + (player.position === 'Meio-Campo' ? 15 : 0));
-  const dri = Math.round(50 + (winRate * 0.25) + (player.position === 'Atacante' ? 12 : 0));
-  
-  // DEF (Defense): High for Defenders and Goalkeepers
-  const def = Math.round(35 + (player.position === 'Zagueiro' || player.position === 'Goleiro' ? 45 : 10) + (winRate * 0.1));
-  
-  // PHY (Physical): High for defenders and based on games played
-  const phy = Math.round(50 + Math.min(40, games * 4) + (player.position === 'Zagueiro' ? 10 : 0));
-
-  // OVR (Overall rating): Average of the 6 FUT stats
-  const ovr = games > 0 
-    ? Math.min(99, Math.round((pac + sho + pas + dri + def + phy) / 6))
-    : 50;
+  // OVR is the average of current attributes (either calculated from stats or fallback)
+  const ovr = stats?.currentOvr ?? Math.round((pac + sho + pas + dri + def + phy) / 6);
 
   return (
     <div className={`player-card-fut ${tier}`} onClick={onClick} role="button" tabIndex={0}>

@@ -68,16 +68,46 @@ export const db = {
   players: {
     toArray: async () => {
       const { data } = await supabase.from('players').select('*').order('name');
-      return (data || []).map(p => ({ ...p, id: Number(p.id), photo: p.photo_url }));
+      return (data || []).map(p => ({
+        ...p,
+        id: Number(p.id),
+        photo: p.photo_url,
+        initialPac: Number(p.initial_pac || 60),
+        initialSho: Number(p.initial_sho || 60),
+        initialPas: Number(p.initial_pas || 60),
+        initialDri: Number(p.initial_dri || 60),
+        initialDef: Number(p.initial_def || 60),
+        initialPhy: Number(p.initial_phy || 60)
+      }));
     },
     get: async (id) => {
       const { data } = await supabase.from('players').select('*').eq('id', id).maybeSingle();
-      return data ? { ...data, id: Number(data.id), photo: data.photo_url } : null;
+      return data ? {
+        ...data,
+        id: Number(data.id),
+        photo: data.photo_url,
+        initialPac: Number(data.initial_pac || 60),
+        initialSho: Number(data.initial_sho || 60),
+        initialPas: Number(data.initial_pas || 60),
+        initialDri: Number(data.initial_dri || 60),
+        initialDef: Number(data.initial_def || 60),
+        initialPhy: Number(data.initial_phy || 60)
+      } : null;
     },
     orderBy: (field) => ({
       toArray: async () => {
         const { data } = await supabase.from('players').select('*').order(field);
-        return (data || []).map(p => ({ ...p, id: Number(p.id), photo: p.photo_url }));
+        return (data || []).map(p => ({
+          ...p,
+          id: Number(p.id),
+          photo: p.photo_url,
+          initialPac: Number(p.initial_pac || 60),
+          initialSho: Number(p.initial_sho || 60),
+          initialPas: Number(p.initial_pas || 60),
+          initialDri: Number(p.initial_dri || 60),
+          initialDef: Number(p.initial_def || 60),
+          initialPhy: Number(p.initial_phy || 60)
+        }));
       }
     })
   },
@@ -131,7 +161,7 @@ export const db = {
 
 // ── CRUD Helpers ──
 
-export async function addPlayer({ name, nickname, photo, position, user_id = null }) {
+export async function addPlayer({ name, nickname, photo, position, user_id = null, initialPac = 60, initialSho = 60, initialPas = 60, initialDri = 60, initialDef = 60, initialPhy = 60 }) {
   const { data, error } = await supabase
     .from('players')
     .insert([{
@@ -139,7 +169,13 @@ export async function addPlayer({ name, nickname, photo, position, user_id = nul
       nickname: nickname || '',
       photo_url: photo || '',
       position: position || '',
-      user_id
+      user_id,
+      initial_pac: initialPac,
+      initial_sho: initialSho,
+      initial_pas: initialPas,
+      initial_dri: initialDri,
+      initial_def: initialDef,
+      initial_phy: initialPhy
     }])
     .select()
     .single();
@@ -154,6 +190,13 @@ export async function updatePlayer(id, changes) {
     mapped.photo_url = changes.photo;
     delete mapped.photo;
   }
+  if ('initialPac' in changes) { mapped.initial_pac = changes.initialPac; delete mapped.initialPac; }
+  if ('initialSho' in changes) { mapped.initial_sho = changes.initialSho; delete mapped.initialSho; }
+  if ('initialPas' in changes) { mapped.initial_pas = changes.initialPas; delete mapped.initialPas; }
+  if ('initialDri' in changes) { mapped.initial_dri = changes.initialDri; delete mapped.initialDri; }
+  if ('initialDef' in changes) { mapped.initial_def = changes.initialDef; delete mapped.initialDef; }
+  if ('initialPhy' in changes) { mapped.initial_phy = changes.initialPhy; delete mapped.initialPhy; }
+
   const { error } = await supabase.from('players').update(mapped).eq('id', id);
   if (error) throw error;
 }

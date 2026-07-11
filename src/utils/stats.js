@@ -10,6 +10,14 @@ export async function getPlayerStats(playerId, playerObj = null) {
   const allMatches = await db.matches.toArray();
   const matchMap = Object.fromEntries(allMatches.map(m => [m.id, m]));
 
+  const player = playerObj || (await db.players.get(playerId));
+  const initialPac = player?.initialPac ?? 60;
+  const initialSho = player?.initialSho ?? 60;
+  const initialPas = player?.initialPas ?? 60;
+  const initialDri = player?.initialDri ?? 60;
+  const initialDef = player?.initialDef ?? 60;
+  const initialPhy = player?.initialPhy ?? 60;
+
   let games = 0, wins = 0, draws = 0, losses = 0, goals = 0, assists = 0;
 
   for (const lineup of lineups) {
@@ -31,7 +39,24 @@ export async function getPlayerStats(playerId, playerObj = null) {
 
   const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
 
-  return { playerId, games, wins, draws, losses, goals, assists, winRate };
+  // General win/loss modifier
+  const modifier = (wins * 1.5) - (losses * 1.5);
+
+  // Evolve each attribute
+  const pac = Math.max(40, Math.min(99, Math.round(initialPac + modifier)));
+  const sho = Math.max(40, Math.min(99, Math.round(initialSho + modifier + goals * 0.5)));
+  const pas = Math.max(40, Math.min(99, Math.round(initialPas + modifier + assists * 0.3)));
+  const dri = Math.max(40, Math.min(99, Math.round(initialDri + modifier)));
+  const def = Math.max(40, Math.min(99, Math.round(initialDef + modifier)));
+  const phy = Math.max(40, Math.min(99, Math.round(initialPhy + modifier)));
+
+  // Current OVR is the average of evolved stats
+  const currentOvr = Math.round((pac + sho + pas + dri + def + phy) / 6);
+
+  return { 
+    playerId, games, wins, draws, losses, goals, assists, winRate,
+    pac, sho, pas, dri, def, phy, currentOvr 
+  };
 }
 
 /**

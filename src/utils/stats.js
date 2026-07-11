@@ -4,7 +4,8 @@ import { db } from '../db';
  * Compute full stats for a single player
  */
 export async function getPlayerStats(playerId) {
-  const lineups = await db.lineups.where('playerId').equals(playerId).toArray();
+  const allLineups = await db.lineups.toArray();
+  const lineups = allLineups.filter(l => l.playerId === playerId);
   const allGoals = await db.goals.toArray();
   const allMatches = await db.matches.toArray();
   const matchMap = Object.fromEntries(allMatches.map(m => [m.id, m]));
@@ -51,7 +52,7 @@ export async function getAllPlayerStats() {
  */
 export async function getStatsSummaryForAI() {
   const players = await db.players.toArray();
-  const matches = await db.matches.orderBy('date').reverse().toArray();
+  const matches = await db.matches.toArray();
   const allStats = await getAllPlayerStats();
 
   return {
@@ -140,10 +141,12 @@ export async function getRankings(category = 'goals', period = null) {
  * Get the "craque da rodada" (best player from last match)
  */
 export async function getCraqueDaRodada() {
-  const matches = await db.matches.orderBy('date').reverse().first();
-  if (!matches) return null;
+  const allMatches = await db.matches.toArray();
+  const lastMatch = allMatches[0] || null;
+  if (!lastMatch) return null;
 
-  const goals = await db.goals.where('matchId').equals(matches.id).toArray();
+  const allGoals = await db.goals.toArray();
+  const goals = allGoals.filter(g => g.matchId === lastMatch.id);
   if (!goals.length) return null;
 
   // Count goals per player
@@ -156,5 +159,5 @@ export async function getCraqueDaRodada() {
   if (!topScorerId) return null;
 
   const player = await db.players.get(Number(topScorerId));
-  return player ? { player, goals: goalCount[topScorerId], match: matches } : null;
+  return player ? { player, goals: goalCount[topScorerId], match: lastMatch } : null;
 }

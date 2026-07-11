@@ -16,36 +16,95 @@ export function useLiveQuery(queryFn, deps = []) {
   return data;
 }
 
+// ── Column Mapping Helpers to maintain camelCase on frontend ──
+const mapMatch = (m) => {
+  if (!m) return null;
+  return {
+    ...m,
+    id: Number(m.id),
+    teamAName: m.team_a_name,
+    teamAColor: m.team_a_color,
+    teamBName: m.team_b_name,
+    teamBColor: m.team_b_color,
+    scoreA: Number(m.score_a),
+    scoreB: Number(m.score_b),
+    aiSummary: m.ai_summary
+  };
+};
+
+const mapLineup = (l) => {
+  if (!l) return null;
+  return {
+    ...l,
+    id: Number(l.id),
+    matchId: Number(l.match_id),
+    playerId: Number(l.player_id)
+  };
+};
+
+const mapGoal = (g) => {
+  if (!g) return null;
+  return {
+    ...g,
+    id: Number(g.id),
+    matchId: Number(g.match_id),
+    scorerId: Number(g.scorer_id),
+    assistId: g.assist_id ? Number(g.assist_id) : null
+  };
+};
+
+const mapRestriction = (r) => {
+  if (!r) return null;
+  return {
+    ...r,
+    id: Number(r.id),
+    playerAId: Number(r.player_a_id),
+    playerBId: Number(r.player_b_id)
+  };
+};
+
 // ── Fluent DB Interface to map existing Dexie queries to Supabase ──
 export const db = {
   players: {
     toArray: async () => {
       const { data } = await supabase.from('players').select('*').order('name');
-      return (data || []).map(p => ({ ...p, photo: p.photo_url }));
+      return (data || []).map(p => ({ ...p, id: Number(p.id), photo: p.photo_url }));
     },
     get: async (id) => {
       const { data } = await supabase.from('players').select('*').eq('id', id).maybeSingle();
-      return data ? { ...data, photo: data.photo_url } : null;
+      return data ? { ...data, id: Number(data.id), photo: data.photo_url } : null;
     },
     orderBy: (field) => ({
       toArray: async () => {
         const { data } = await supabase.from('players').select('*').order(field);
-        return (data || []).map(p => ({ ...p, photo: p.photo_url }));
+        return (data || []).map(p => ({ ...p, id: Number(p.id), photo: p.photo_url }));
       }
     })
   },
   matches: {
+    toArray: async () => {
+      const { data } = await supabase.from('matches').select('*').order('date', { ascending: false });
+      return (data || []).map(mapMatch);
+    },
+    update: async (id, changes) => {
+      const mapped = {};
+      if ('aiSummary' in changes) mapped.ai_summary = changes.aiSummary;
+      if ('scoreA' in changes) mapped.score_a = changes.scoreA;
+      if ('scoreB' in changes) mapped.score_b = changes.scoreB;
+      const { error } = await supabase.from('matches').update(mapped).eq('id', id);
+      if (error) throw error;
+    },
     orderBy: (field) => ({
       reverse: () => ({
         limit: (n) => ({
           toArray: async () => {
             const { data } = await supabase.from('matches').select('*').order(field, { ascending: false }).limit(n);
-            return data || [];
+            return (data || []).map(mapMatch);
           }
         }),
         toArray: async () => {
           const { data } = await supabase.from('matches').select('*').order(field, { ascending: false });
-          return data || [];
+          return (data || []).map(mapMatch);
         }
       })
     })
@@ -53,19 +112,19 @@ export const db = {
   lineups: {
     toArray: async () => {
       const { data } = await supabase.from('lineups').select('*');
-      return data || [];
+      return (data || []).map(mapLineup);
     }
   },
   goals: {
     toArray: async () => {
       const { data } = await supabase.from('goals').select('*');
-      return data || [];
+      return (data || []).map(mapGoal);
     }
   },
   restrictions: {
     toArray: async () => {
       const { data } = await supabase.from('restrictions').select('*');
-      return data || [];
+      return (data || []).map(mapRestriction);
     }
   }
 };
@@ -78,7 +137,7 @@ export async function addPlayer({ name, nickname, photo, position, user_id = nul
     .insert([{
       name,
       nickname: nickname || '',
-      photo_url: photo || '', // photo contains base64 string
+      photo_url: photo || '',
       position: position || '',
       user_id
     }])
@@ -90,7 +149,6 @@ export async function addPlayer({ name, nickname, photo, position, user_id = nul
 }
 
 export async function updatePlayer(id, changes) {
-  // If editing photo, we map photo -> photo_url
   const mapped = { ...changes };
   if ('photo' in changes) {
     mapped.photo_url = changes.photo;
@@ -113,7 +171,6 @@ export async function addMatch({
   goals,
   aiSummary
 }) {
-  // Insert Match
   const { data: match, error: matchErr } = await supabase
     .from('matches')
     .insert([{
@@ -129,7 +186,6 @@ export async function addMatch({
   if (matchErr) throw matchErr;
   const matchId = match.id;
 
-  // Insert Lineups
   if (lineupA?.length || lineupB?.length) {
     const lData = [];
     if (lineupA?.length) lineupA.forEach(pid => lData.push({ match_id: matchId, player_id: pid, team: 'A' }));
@@ -139,7 +195,6 @@ export async function addMatch({
     if (lErr) throw lErr;
   }
 
-  // Insert Goals
   if (goals?.length) {
     const gData = goals.map(g => ({
       match_id: matchId,
@@ -162,7 +217,6 @@ export async function updateMatch(matchId, {
   goals,
   aiSummary
 }) {
-  // Update Match
   const { error: matchErr } = await supabase
     .from('matches')
     .update({
@@ -176,11 +230,9 @@ export async function updateMatch(matchId, {
 
   if (matchErr) throw matchErr;
 
-  // Clean old lineups/goals (ON DELETE CASCADE will clean, but let's do manually to be safe)
   await supabase.from('lineups').delete().eq('match_id', matchId);
   await supabase.from('goals').delete().eq('match_id', matchId);
 
-  // Insert new Lineups
   if (lineupA?.length || lineupB?.length) {
     const lData = [];
     if (lineupA?.length) lineupA.forEach(pid => lData.push({ match_id: matchId, player_id: pid, team: 'A' }));
@@ -190,7 +242,6 @@ export async function updateMatch(matchId, {
     if (lErr) throw lErr;
   }
 
-  // Insert new Goals
   if (goals?.length) {
     const gData = goals.map(g => ({
       match_id: matchId,
@@ -216,7 +267,7 @@ export async function getMatchDetails(matchId) {
   const { data: goals } = await supabase.from('goals').select('*').eq('match_id', matchId);
   const { data: allPlayers } = await supabase.from('players').select('*');
 
-  const playerMap = Object.fromEntries((allPlayers || []).map(p => [p.id, { ...p, photo: p.photo_url }]));
+  const playerMap = Object.fromEntries((allPlayers || []).map(p => [p.id, { ...p, id: Number(p.id), photo: p.photo_url }]));
 
   return {
     id: match.id,
@@ -226,16 +277,16 @@ export async function getMatchDetails(matchId) {
     teamAColor: match.team_a_color,
     teamBName: match.team_b_name,
     teamBColor: match.team_b_color,
-    scoreA: match.score_a,
-    scoreB: match.score_b,
+    scoreA: Number(match.score_a),
+    scoreB: Number(match.score_b),
     aiSummary: match.ai_summary,
     lineupA: (lineups || []).filter(l => l.team === 'A').map(l => playerMap[l.player_id]).filter(Boolean),
     lineupB: (lineups || []).filter(l => l.team === 'B').map(l => playerMap[l.player_id]).filter(Boolean),
     goals: (goals || []).map(g => ({
-      id: g.id,
-      scorerId: g.scorer_id,
+      id: Number(g.id),
+      scorerId: Number(g.scorer_id),
       scorer: playerMap[g.scorer_id],
-      assistId: g.assist_id,
+      assistId: g.assist_id ? Number(g.assist_id) : null,
       assistant: g.assist_id ? playerMap[g.assist_id] : null,
       team: g.team
     }))
@@ -267,7 +318,6 @@ export async function exportAllData() {
 }
 
 export async function importAllData(data) {
-  // Clear all
   await Promise.all([
     supabase.from('lineups').delete().neq('id', 0),
     supabase.from('goals').delete().neq('id', 0),
@@ -276,7 +326,6 @@ export async function importAllData(data) {
   await supabase.from('players').delete().neq('id', 0);
   await supabase.from('matches').delete().neq('id', 0);
 
-  // Bulk inserts
   if (data.players?.length) await supabase.from('players').insert(data.players);
   if (data.matches?.length) await supabase.from('matches').insert(data.matches);
   if (data.lineups?.length) await supabase.from('lineups').insert(data.lineups);

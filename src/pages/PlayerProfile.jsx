@@ -25,9 +25,11 @@ export default function PlayerProfile() {
 
     // Get matches this player participated in
     (async () => {
-      const lineups = await db.lineups.where('playerId').equals(playerId).toArray();
+      const allLineups = await db.lineups.toArray();
+      const lineups = allLineups.filter(l => l.playerId === playerId);
       const matchIds = [...new Set(lineups.map(l => l.matchId))];
-      const matches = await db.matches.where('id').anyOf(matchIds).toArray();
+      const allMatches = await db.matches.toArray();
+      const matches = allMatches.filter(m => matchIds.includes(m.id));
       const enriched = matches.map(m => {
         const lineup = lineups.find(l => l.matchId === m.id);
         return { ...m, playerTeam: lineup?.team };

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, addRestriction, deleteRestriction, exportAllData, importAllData, getSystemConfig, setSystemConfig } from '../db';
+import { db, useLiveQuery, addRestriction, deleteRestriction, exportAllData, importAllData, getSystemConfig, setSystemConfig } from '../db';
 import { getInitials } from '../utils/formatters';
 
 export default function Settings() {

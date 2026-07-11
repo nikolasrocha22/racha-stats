@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useOutletContext } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, addMatch, updateMatch, getMatchDetails } from '../db';
+import { db, useLiveQuery, addMatch, updateMatch, getMatchDetails } from '../db';
 import { TEAM_COLORS, getInitials } from '../utils/formatters';
 
 const TOTAL_STEPS = 6;

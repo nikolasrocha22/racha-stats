@@ -1392,5 +1392,155 @@ a:hover { color: var(--green-glow); }
 .justify-between { justify-content: space-between; }
 .gap-sm { gap: var(--space-sm); }
 .gap-md { gap: var(--space-md); }
-.w-full { width: 100%; }
 .hidden { display: none !important; }
+
+/* ── FUT Premium Card Styles ── */
+.player-card-fut {
+  position: relative;
+  background: linear-gradient(135deg, #1f1f1f 0%, #111 100%);
+  border: 2px solid #555;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.player-card-fut::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 45%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 55%
+  );
+  transform: rotate(45deg);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.player-card-fut:hover::before {
+  transform: translate(50%, 50%) rotate(45deg);
+}
+
+.player-card-fut:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+/* FUT Gold Card */
+.player-card-fut.gold {
+  background: linear-gradient(135deg, #ffe066 0%, #d4af37 50%, #996515 100%);
+  border-color: #ffd700;
+  color: #1a1a1a;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+}
+.player-card-fut.gold .player-card-nickname,
+.player-card-fut.gold .player-card-stat-label {
+  color: #4a3c00;
+}
+.player-card-fut.gold .player-card-stat-value {
+  color: #000;
+}
+.player-card-fut.gold .player-card-position {
+  background: rgba(0, 0, 0, 0.15);
+  color: #000;
+}
+
+/* FUT Silver Card */
+.player-card-fut.silver {
+  background: linear-gradient(135deg, #e0e0e0 0%, #a6a6a6 50%, #737373 100%);
+  border-color: #c0c0c0;
+  color: #111;
+  box-shadow: 0 4px 15px rgba(192, 192, 192, 0.25);
+}
+.player-card-fut.silver .player-card-nickname,
+.player-card-fut.silver .player-card-stat-label {
+  color: #3d3d3d;
+}
+.player-card-fut.silver .player-card-stat-value {
+  color: #000;
+}
+.player-card-fut.silver .player-card-position {
+  background: rgba(0, 0, 0, 0.12);
+  color: #000;
+}
+
+/* FUT Bronze Card */
+.player-card-fut.bronze {
+  background: linear-gradient(135deg, #cd7f32 0%, #9c5c22 50%, #613610 100%);
+  border-color: #a05822;
+  color: #ffe8d6;
+  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.15);
+}
+.player-card-fut.bronze .player-card-nickname,
+.player-card-fut.bronze .player-card-stat-label {
+  color: #ffd8bd;
+}
+.player-card-fut.bronze .player-card-stat-value {
+  color: #fff;
+}
+.player-card-fut.bronze .player-card-position {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* FUT Grid stats inside player card */
+.fut-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  padding-top: 8px;
+}
+.player-card-fut.bronze .fut-stats-grid {
+  border-top-color: rgba(255,255,255,0.1);
+}
+
+.fut-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fut-stat-value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.fut-stat-label {
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Frosted glass headers and navbar */
+.glass-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(7, 12, 10, 0.75);
+  border-bottom: 1px solid var(--border);
+  padding: 12px var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.glass-nav {
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  background: rgba(13, 22, 18, 0.8) !important;
+  border-top: 1px solid var(--border) !important;
+}

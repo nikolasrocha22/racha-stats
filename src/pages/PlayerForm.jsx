@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useOutletContext } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, addPlayer, updatePlayer } from '../db';
+import { db, useLiveQuery, addPlayer, updatePlayer } from '../db';
 import { POSITIONS } from '../utils/formatters';
 
 export default function PlayerForm() {

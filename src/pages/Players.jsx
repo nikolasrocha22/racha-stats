@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
+import { db, useLiveQuery } from '../db';
 import { getAllPlayerStats } from '../utils/stats';
 import PlayerCard from '../components/PlayerCard';
 

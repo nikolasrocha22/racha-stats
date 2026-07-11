@@ -49,6 +49,27 @@ export default function MatchDetail() {
     setGeneratingAI(false);
   };
 
+  const handleShareWhatsApp = () => {
+    if (!match) return;
+    const goalsList = match.goals?.map(g => {
+      const scorer = g.scorer?.nickname || g.scorer?.name || 'Desconhecido';
+      const assistantStr = g.assistant ? ` (Assistência: ${g.assistant.nickname || g.assistant.name})` : '';
+      return `• ${scorer}${assistantStr} - ${g.team === 'A' ? match.teamAName : match.teamBName}`;
+    }).join('\n') || 'Sem gols registrados';
+    
+    let text = `⚽ *PARTIDA CONCLUÍDA - RACHA STATS* ⚽\n\n🏆 *${match.teamAName} ${match.scoreA} x ${match.scoreB} ${match.teamBName}*\n\n📅 Data: ${formatDate(match.date)}${match.location ? `\n📍 Local: ${match.location}` : ''}\n\n🔥 *Gols:*\n${goalsList}`;
+    
+    if (match.aiSummary) {
+      const cleanSummary = match.aiSummary.replace(/\*\*/g, '*');
+      text += `\n\n🎙️ *Resumo da IA:*\n${cleanSummary}`;
+    }
+    
+    text += `\n\nVeja o placar e as estatísticas em: https://racha-stats.vercel.app`;
+    
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   if (loading) return <div className="page"><div className="loading"><div className="loading-spinner" /> Carregando...</div></div>;
   if (!match) return <div className="page"><div className="empty-state"><div className="empty-state-text">Partida não encontrada.</div></div></div>;
 
@@ -171,14 +192,18 @@ export default function MatchDetail() {
       {match.aiSummary ? (
         <div className="ai-summary" style={{ marginBottom: '16px' }}>{match.aiSummary}</div>
       ) : isAIConfigured() ? (
-        <button className="btn btn-secondary btn-block" onClick={handleGenerateSummary} disabled={generatingAI}>
+        <button className="btn btn-secondary btn-block" onClick={handleGenerateSummary} disabled={generatingAI} style={{ marginBottom: '16px' }}>
           {generatingAI ? '✨ Gerando resumo...' : '✨ Gerar Resumo com IA'}
         </button>
       ) : (
-        <div className="text-sm text-muted text-center">
+        <div className="text-sm text-muted text-center" style={{ marginBottom: '16px' }}>
           Configure a API key do Gemini nas ⚙️ Configurações para gerar resumos.
         </div>
       )}
+
+      <button className="btn btn-primary btn-block" onClick={handleShareWhatsApp} style={{ marginTop: '8px', marginBottom: '24px' }}>
+        💬 Compartilhar no WhatsApp
+      </button>
     </div>
   );
 }

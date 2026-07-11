@@ -1,8 +1,7 @@
 import React from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
-import { getCraqueDaRodada } from '../utils/stats';
+import { db, useLiveQuery } from '../db';
+import { getCraqueDaRodada, getAllPlayerStats } from '../utils/stats';
 import MatchCard from '../components/MatchCard';
 import { getInitials } from '../utils/formatters';
 
@@ -14,9 +13,40 @@ export default function Home() {
   const allGoals = useLiveQuery(() => db.goals.toArray());
   const [craque, setCraque] = React.useState(null);
 
+  const [highlights, setHighlights] = React.useState({
+    artilheiro: null,
+    garcom: null,
+    muralha: null,
+    pernaDePau: null
+  });
+
   React.useEffect(() => {
     getCraqueDaRodada().then(setCraque);
   }, [matches]);
+
+  React.useEffect(() => {
+    getAllPlayerStats().then(allStats => {
+      if (!allStats || allStats.length === 0) return;
+
+      const artilheiro = [...allStats]
+        .filter(s => s.goals > 0)
+        .sort((a, b) => b.goals - a.goals)[0] || null;
+
+      const garcom = [...allStats]
+        .filter(s => s.assists > 0)
+        .sort((a, b) => b.assists - a.assists)[0] || null;
+
+      const muralha = [...allStats]
+        .filter(s => s.games >= 3 && s.winRate > 0)
+        .sort((a, b) => b.winRate - a.winRate)[0] || null;
+
+      const pernaDePau = [...allStats]
+        .filter(s => s.losses > 0)
+        .sort((a, b) => b.losses - a.losses)[0] || null;
+
+      setHighlights({ artilheiro, garcom, muralha, pernaDePau });
+    });
+  }, [players]);
 
   const totalMatches = matches?.length || 0;
   const totalPlayers = players?.length || 0;
@@ -48,7 +78,51 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Craque da Rodada */}
+      {/* Highlights Panel */}
+      {players && players.length > 0 && (highlights.artilheiro || highlights.garcom || highlights.muralha || highlights.pernaDePau) && (
+        <>
+          <div className="section-title">🏆 Destaques & Conquistas</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '24px' }}>
+            
+            {highlights.muralha && (
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px' }}>
+                <span style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🛡️</span>
+                <div style={{ fontSize: '0.65rem', fontWeight: '800', textTransform: 'uppercase', color: 'var(--gold)', letterSpacing: '0.5px' }}>Dono do Racha</div>
+                <div style={{ fontWeight: '700', fontSize: '0.85rem', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>{highlights.muralha.player.nickname || highlights.muralha.player.name}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Aproveitamento: {highlights.muralha.winRate}%</div>
+              </div>
+            )}
+
+            {highlights.artilheiro && (
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px' }}>
+                <span style={{ fontSize: '1.5rem', marginBottom: '4px' }}>👟</span>
+                <div style={{ fontSize: '0.65rem', fontWeight: '800', textTransform: 'uppercase', color: 'var(--green-primary)', letterSpacing: '0.5px' }}>Artilheiro</div>
+                <div style={{ fontWeight: '700', fontSize: '0.85rem', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>{highlights.artilheiro.player.nickname || highlights.artilheiro.player.name}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Gols: {highlights.artilheiro.goals}</div>
+              </div>
+            )}
+
+            {highlights.garcom && (
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px' }}>
+                <span style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🤝</span>
+                <div style={{ fontSize: '0.65rem', fontWeight: '800', textTransform: 'uppercase', color: 'var(--blue)', letterSpacing: '0.5px' }}>Garçom</div>
+                <div style={{ fontWeight: '700', fontSize: '0.85rem', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>{highlights.garcom.player.nickname || highlights.garcom.player.name}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Assis: {highlights.garcom.assists}</div>
+              </div>
+            )}
+
+            {highlights.pernaDePau && (
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px' }}>
+                <span style={{ fontSize: '1.5rem', marginBottom: '4px' }}>🪵</span>
+                <div style={{ fontSize: '0.65rem', fontWeight: '800', textTransform: 'uppercase', color: 'var(--red)', letterSpacing: '0.5px' }}>Perna de Pau</div>
+                <div style={{ fontWeight: '700', fontSize: '0.85rem', margin: '2px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>{highlights.pernaDePau.player.nickname || highlights.pernaDePau.player.name}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Derrotas: {highlights.pernaDePau.losses}</div>
+              </div>
+            )}
+
+          </div>
+        </>
+      )}
       {craque && (
         <>
           <div className="section-title">Craque da Rodada</div>

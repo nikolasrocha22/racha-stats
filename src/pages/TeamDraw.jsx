@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db } from '../db';
+import { db, useLiveQuery } from '../db';
 import { getAllPlayerStats } from '../utils/stats';
 import { randomDraw } from '../utils/teamBalance';
 import { isAIConfigured, generateBalancedTeams } from '../ai';
@@ -92,6 +91,24 @@ export default function TeamDraw() {
   };
 
   const getPlayer = (id) => (players || []).find(p => p.id === id);
+
+  const handleShareWhatsApp = () => {
+    if (!result) return;
+    const teamA = result.teamA.map(p => `• ${p.nickname || p.name}`).join('\n');
+    const teamB = result.teamB.map(p => `• ${p.nickname || p.name}`).join('\n');
+    
+    let text = `⚽ *TIMES SORTEADOS - RACHA STATS* ⚽\n\n🟢 *TIME A:*\n${teamA}\n\n🔴 *TIME B:*\n${teamB}`;
+    
+    if (announcement) {
+      const cleanAnn = announcement.replace(/\*\*/g, '*');
+      text += `\n\n🎙️ *Análise da IA:*\n${cleanAnn}`;
+    }
+    
+    text += `\n\nMontado em: https://racha-stats.vercel.app`;
+    
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
 
   return (
     <div className="page">
@@ -266,14 +283,19 @@ export default function TeamDraw() {
           )}
 
           {revealPhase === 2 && (
-            <button className="btn btn-primary btn-block" onClick={() => {
-              setResult(null);
-              setRevealPhase(0);
-              setRevealed([]);
-              setAnnouncement('');
-            }}>
-              🔄 Novo Sorteio
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button className="btn btn-primary btn-block" onClick={handleShareWhatsApp}>
+                💬 Compartilhar no WhatsApp
+              </button>
+              <button className="btn btn-secondary btn-block" onClick={() => {
+                setResult(null);
+                setRevealPhase(0);
+                setRevealed([]);
+                setAnnouncement('');
+              }}>
+                🔄 Novo Sorteio
+              </button>
+            </div>
           )}
         </div>
       )}

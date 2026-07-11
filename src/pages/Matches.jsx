@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db';
+import { db, useLiveQuery } from '../db';
 import MatchCard from '../components/MatchCard';
 
 export default function Matches() {

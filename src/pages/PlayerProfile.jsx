@@ -1,7 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, deletePlayer } from '../db';
+import { db, useLiveQuery, deletePlayer } from '../db';
 import { getPlayerStats } from '../utils/stats';
 import StatBar from '../components/StatBar';
 import MatchCard from '../components/MatchCard';

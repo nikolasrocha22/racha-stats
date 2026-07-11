@@ -3,7 +3,7 @@ import { NavLink } from 'react-router';
 
 export default function Navbar() {
   return (
-    <nav className="navbar">
+    <nav className="navbar glass-nav">
       <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
         <span className="nav-icon">🏠</span>
         <span>Início</span>

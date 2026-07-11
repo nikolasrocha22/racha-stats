@@ -14,6 +14,7 @@ import MoreMenu from './pages/MoreMenu';
 import TeamDraw from './pages/TeamDraw';
 import StatsChat from './pages/StatsChat';
 import Settings from './pages/Settings';
+import Login from './pages/Login';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
       { path: 'team-draw', element: <TeamDraw /> },
       { path: 'stats-chat', element: <StatsChat /> },
       { path: 'settings', element: <Settings /> },
+      { path: 'login', element: <Login /> },
     ]
   }
 ]);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useOutletContext } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, deletePlayer } from '../db';
 import { getPlayerStats } from '../utils/stats';
@@ -11,6 +11,7 @@ import { isAIConfigured, generatePlayerTitles } from '../ai';
 export default function PlayerProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isAdmin } = useOutletContext();
   const playerId = Number(id);
   const player = useLiveQuery(() => db.players.get(playerId), [id]);
   const [stats, setStats] = React.useState(null);
@@ -55,13 +56,20 @@ export default function PlayerProfile() {
 
   if (!player) return <div className="page"><div className="loading"><div className="loading-spinner" /> Carregando...</div></div>;
 
+  const canEdit = isAdmin || (user && player.user_id === user.id);
+  const canDelete = isAdmin;
+
   return (
     <div className="page">
       <div className="page-header">
         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/players')}>← Voltar</button>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/players/${id}/edit`)}>✏️</button>
-          <button className="btn btn-danger btn-sm" onClick={handleDelete}>🗑️</button>
+          {canEdit && (
+            <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/players/${id}/edit`)}>✏️</button>
+          )}
+          {canDelete && (
+            <button className="btn btn-danger btn-sm" onClick={handleDelete}>🗑️</button>
+          )}
         </div>
       </div>
 

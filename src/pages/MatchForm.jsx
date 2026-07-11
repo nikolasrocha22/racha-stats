@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useOutletContext } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, addMatch, updateMatch, getMatchDetails } from '../db';
 import { TEAM_COLORS, getInitials } from '../utils/formatters';
@@ -9,7 +9,14 @@ const TOTAL_STEPS = 6;
 export default function MatchForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useOutletContext();
   const isEdit = !!id;
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) navigate('/login');
+  }, [user, navigate]);
+
   const players = useLiveQuery(() => db.players.orderBy('name').toArray());
 
   const [step, setStep] = useState(1);

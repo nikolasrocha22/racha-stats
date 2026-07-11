@@ -1,24 +1,43 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useOutletContext } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, addRestriction, deleteRestriction, exportAllData, importAllData } from '../db';
+import { db, addRestriction, deleteRestriction, exportAllData, importAllData, getSystemConfig, setSystemConfig } from '../db';
 import { getInitials } from '../utils/formatters';
 
 export default function Settings() {
   const navigate = useNavigate();
+  const { user, isAdmin } = useOutletContext();
+
+  // Protect Settings page
+  useEffect(() => {
+    if (!isAdmin) {
+      navigate('/');
+    }
+  }, [isAdmin, navigate]);
+
   const players = useLiveQuery(() => db.players.toArray());
   const restrictions = useLiveQuery(() => db.restrictions.toArray());
 
-  const [apiKey, setApiKey] = useState(localStorage.getItem('racha_stats_api_key') || '');
+  const [apiKey, setApiKey] = useState('');
   const [saved, setSaved] = useState(false);
   const [newRestrA, setNewRestrA] = useState('');
   const [newRestrB, setNewRestrB] = useState('');
   const [importing, setImporting] = useState(false);
 
-  const saveApiKey = () => {
-    localStorage.setItem('racha_stats_api_key', apiKey.trim());
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    getSystemConfig('api_key').then(val => {
+      if (val) setApiKey(val);
+    });
+  }, []);
+
+  const saveApiKey = async () => {
+    try {
+      await setSystemConfig('api_key', apiKey.trim());
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      alert('Erro ao salvar chave: ' + err.message);
+    }
   };
 
   const handleExport = async () => {

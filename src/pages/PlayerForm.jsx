@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams, useOutletContext } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, addPlayer, updatePlayer } from '../db';
 import { POSITIONS } from '../utils/formatters';
@@ -7,8 +7,14 @@ import { POSITIONS } from '../utils/formatters';
 export default function PlayerForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isAdmin } = useOutletContext();
   const isEdit = !!id;
   const fileRef = useRef();
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) navigate('/login');
+  }, [user, navigate]);
 
   const existing = useLiveQuery(() => id ? db.players.get(Number(id)) : null, [id]);
 
@@ -21,13 +27,17 @@ export default function PlayerForm() {
 
   React.useEffect(() => {
     if (existing && !loaded) {
+      if (!isAdmin && existing.user_id && existing.user_id !== user?.id) {
+        navigate(`/players/${id}`);
+        return;
+      }
       setName(existing.name || '');
       setNickname(existing.nickname || '');
       setPosition(existing.position || '');
       setPhoto(existing.photo || '');
       setLoaded(true);
     }
-  }, [existing, loaded]);
+  }, [existing, loaded, isAdmin, user, id, navigate]);
 
   const handlePhoto = (e) => {
     const file = e.target.files[0];
@@ -60,7 +70,8 @@ export default function PlayerForm() {
         await updatePlayer(Number(id), { name: name.trim(), nickname: nickname.trim(), position, photo });
         navigate(`/players/${id}`);
       } else {
-        const newId = await addPlayer({ name: name.trim(), nickname: nickname.trim(), position, photo });
+        const user_id = isAdmin ? null : user?.id;
+        const newId = await addPlayer({ name: name.trim(), nickname: nickname.trim(), position, photo, user_id });
         navigate(`/players/${newId}`);
       }
     } catch (err) {

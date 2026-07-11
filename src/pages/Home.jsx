@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useOutletContext } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { getCraqueDaRodada } from '../utils/stats';
@@ -8,6 +8,7 @@ import { getInitials } from '../utils/formatters';
 
 export default function Home() {
   const navigate = useNavigate();
+  const { user } = useOutletContext();
   const matches = useLiveQuery(() => db.matches.orderBy('date').reverse().limit(5).toArray());
   const players = useLiveQuery(() => db.players.toArray());
   const allGoals = useLiveQuery(() => db.goals.toArray());
@@ -80,16 +81,24 @@ export default function Home() {
         <div className="empty-state">
           <div className="empty-state-icon">⚽</div>
           <div className="empty-state-text">Nenhuma partida registrada ainda.<br />Cadastre sua primeira pelada!</div>
-          <button className="btn btn-primary" onClick={() => navigate('/matches/new')}>
-            + Nova Partida
-          </button>
+          {user ? (
+            <button className="btn btn-primary" onClick={() => navigate('/matches/new')}>
+              + Nova Partida
+            </button>
+          ) : (
+            <button className="btn btn-primary" onClick={() => navigate('/login')}>
+              Fazer Login
+            </button>
+          )}
         </div>
       )}
 
       {/* FAB */}
-      <button className="fab" onClick={() => navigate('/matches/new')} aria-label="Nova partida">
-        +
-      </button>
+      {user && (
+        <button className="fab" onClick={() => navigate('/matches/new')} aria-label="Nova partida">
+          +
+        </button>
+      )}
     </div>
   );
 }

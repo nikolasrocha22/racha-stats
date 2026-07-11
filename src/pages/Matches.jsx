@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useOutletContext } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import MatchCard from '../components/MatchCard';
 
 export default function Matches() {
   const navigate = useNavigate();
+  const { user } = useOutletContext();
   const matches = useLiveQuery(() => db.matches.orderBy('date').reverse().toArray());
   const players = useLiveQuery(() => db.players.toArray());
   const lineups = useLiveQuery(() => db.lineups.toArray());
@@ -48,9 +49,11 @@ export default function Matches() {
           <button className="btn btn-secondary btn-sm" onClick={() => setShowFilters(!showFilters)}>
             🔍 Filtros
           </button>
-          <button className="btn btn-primary btn-sm" onClick={() => navigate('/matches/new')}>
-            + Nova
-          </button>
+          {user && (
+            <button className="btn btn-primary btn-sm" onClick={() => navigate('/matches/new')}>
+              + Nova
+            </button>
+          )}
         </div>
       </div>
 
@@ -102,9 +105,15 @@ export default function Matches() {
         <div className="empty-state">
           <div className="empty-state-icon">⚽</div>
           <div className="empty-state-text">Nenhuma partida registrada.<br />Hora de bater uma bola!</div>
-          <button className="btn btn-primary" onClick={() => navigate('/matches/new')}>
-            + Nova Partida
-          </button>
+          {user ? (
+            <button className="btn btn-primary" onClick={() => navigate('/matches/new')}>
+              + Nova Partida
+            </button>
+          ) : (
+            <button className="btn btn-primary" onClick={() => navigate('/login')}>
+              Fazer Login
+            </button>
+          )}
         </div>
       ) : (
         <div className="empty-state">

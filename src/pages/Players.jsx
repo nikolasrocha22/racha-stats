@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useOutletContext } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { getAllPlayerStats } from '../utils/stats';
@@ -7,6 +7,7 @@ import PlayerCard from '../components/PlayerCard';
 
 export default function Players() {
   const navigate = useNavigate();
+  const { user } = useOutletContext();
   const players = useLiveQuery(() => db.players.toArray());
   const [stats, setStats] = React.useState({});
   const [search, setSearch] = React.useState('');
@@ -28,9 +29,11 @@ export default function Players() {
     <div className="page">
       <div className="page-header">
         <h1>👥 Jogadores</h1>
-        <button className="btn btn-primary btn-sm" onClick={() => navigate('/players/new')}>
-          + Novo
-        </button>
+        {user && (
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/players/new')}>
+            + Novo
+          </button>
+        )}
       </div>
 
       {players && players.length > 0 && (
@@ -60,9 +63,15 @@ export default function Players() {
         <div className="empty-state">
           <div className="empty-state-icon">👤</div>
           <div className="empty-state-text">Nenhum jogador cadastrado.<br />Adicione os craques da pelada!</div>
-          <button className="btn btn-primary" onClick={() => navigate('/players/new')}>
-            + Cadastrar Jogador
-          </button>
+          {user ? (
+            <button className="btn btn-primary" onClick={() => navigate('/players/new')}>
+              + Cadastrar Jogador
+            </button>
+          ) : (
+            <button className="btn btn-primary" onClick={() => navigate('/login')}>
+              Fazer Login
+            </button>
+          )}
         </div>
       ) : (
         <div className="empty-state">

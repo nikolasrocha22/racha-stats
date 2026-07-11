@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useOutletContext } from 'react-router';
 import { getMatchDetails, deleteMatch, db } from '../db';
 import { formatDate, getInitials } from '../utils/formatters';
 import { isAIConfigured, generateMatchSummary } from '../ai';
@@ -7,6 +7,7 @@ import { isAIConfigured, generateMatchSummary } from '../ai';
 export default function MatchDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isAdmin } = useOutletContext();
   const [match, setMatch] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [generatingAI, setGeneratingAI] = React.useState(false);
@@ -58,8 +59,12 @@ export default function MatchDetail() {
       <div className="page-header">
         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/matches')}>← Voltar</button>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/matches/${id}/edit`)}>✏️</button>
-          <button className="btn btn-danger btn-sm" onClick={handleDelete}>🗑️</button>
+          {user && (
+            <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/matches/${id}/edit`)}>✏️</button>
+          )}
+          {isAdmin && (
+            <button className="btn btn-danger btn-sm" onClick={handleDelete}>🗑️</button>
+          )}
         </div>
       </div>
 

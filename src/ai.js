@@ -1,9 +1,15 @@
 import { GoogleGenAI } from '@google/genai';
+import { getSystemConfig } from './db';
 
-function getApiKey() {
+async function getApiKey() {
+  try {
+    const key = await getSystemConfig('api_key');
+    if (key) return key.trim();
+  } catch (e) {
+    console.error('Erro ao ler chave da nuvem:', e);
+  }
   const stored = localStorage.getItem('racha_stats_api_key');
   if (stored) return stored.trim();
-  // Fallback to Nvidia key requested by user
   return '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';
 }
 
@@ -39,7 +45,7 @@ async function generateNvidia(systemPrompt, userPrompt, key) {
 }
 
 async function generate(systemPrompt, userPrompt) {
-  const key = getApiKey();
+  const key = await getApiKey();
   if (!key) throw new Error('API key não configurada. Vá em Configurações para inserir sua chave.');
 
   if (isNvidiaKey(key)) {
@@ -59,7 +65,7 @@ async function generate(systemPrompt, userPrompt) {
 }
 
 export function isAIConfigured() {
-  return !!getApiKey();
+  return true;
 }
 
 export async function generateMatchSummary(matchData) {

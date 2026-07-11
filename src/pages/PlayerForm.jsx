@@ -21,7 +21,6 @@ export default function PlayerForm() {
   const [nickname, setNickname] = useState('');
   const [position, setPosition] = useState('');
   const [photo, setPhoto] = useState('');
-  const [initialOvr, setInitialOvr] = useState(60);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -35,7 +34,6 @@ export default function PlayerForm() {
       setNickname(existing.nickname || '');
       setPosition(existing.position || '');
       setPhoto(existing.photo || '');
-      setInitialOvr(existing.initialOvr || 60);
       setLoaded(true);
     }
   }, [existing, loaded, isAdmin, user, id, navigate]);
@@ -68,11 +66,11 @@ export default function PlayerForm() {
     setSaving(true);
     try {
       if (isEdit) {
-        await updatePlayer(Number(id), { name: name.trim(), nickname: nickname.trim(), position, photo, initialOvr });
+        await updatePlayer(Number(id), { name: name.trim(), nickname: nickname.trim(), position, photo });
         navigate(`/players/${id}`);
       } else {
         const user_id = isAdmin ? null : user?.id;
-        const newId = await addPlayer({ name: name.trim(), nickname: nickname.trim(), position, photo, user_id, initialOvr });
+        const newId = await addPlayer({ name: name.trim(), nickname: nickname.trim(), position, photo, user_id });
         navigate(`/players/${newId}`);
       }
     } catch (err) {
@@ -122,25 +120,6 @@ export default function PlayerForm() {
             <option key={p.value} value={p.value}>{p.label}</option>
           ))}
         </select>
-      </div>
-
-      <div className="form-group" style={{ marginBottom: '24px' }}>
-        <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <span>OVR Inicial (Nota de Partida)</span>
-          <span style={{ fontWeight: '800', color: 'var(--gold)', fontFamily: 'var(--font-display)', fontSize: '1.1rem' }}>{initialOvr}</span>
-        </label>
-        <input
-          type="range"
-          min="40"
-          max="99"
-          className="form-input"
-          style={{ padding: '8px 0', cursor: 'pointer' }}
-          value={initialOvr}
-          onChange={e => setInitialOvr(Number(e.target.value))}
-        />
-        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-          Essa será sua nota de partida. Depois de jogar peladas, ela subirá ou descerá dinamicamente de acordo com o resultado do jogo!
-        </span>
       </div>
 
       <button className="btn btn-primary btn-block" onClick={handleSave} disabled={saving || !name.trim()}>

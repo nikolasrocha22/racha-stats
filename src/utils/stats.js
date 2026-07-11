@@ -10,9 +10,6 @@ export async function getPlayerStats(playerId, playerObj = null) {
   const allMatches = await db.matches.toArray();
   const matchMap = Object.fromEntries(allMatches.map(m => [m.id, m]));
 
-  const player = playerObj || (await db.players.get(playerId));
-  const initialOvr = player?.initialOvr ?? 60;
-
   let games = 0, wins = 0, draws = 0, losses = 0, goals = 0, assists = 0;
 
   for (const lineup of lineups) {
@@ -34,10 +31,7 @@ export async function getPlayerStats(playerId, playerObj = null) {
 
   const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
 
-  // Calculate current dynamic OVR
-  const currentOvr = Math.max(40, Math.min(99, Math.round(initialOvr + (wins * 1.5) - (losses * 1.5) + (goals * 0.5) + (assists * 0.3))));
-
-  return { playerId, games, wins, draws, losses, goals, assists, winRate, initialOvr, currentOvr };
+  return { playerId, games, wins, draws, losses, goals, assists, winRate };
 }
 
 /**

@@ -2,11 +2,12 @@ import React from 'react';
 import { getInitials } from '../utils/formatters';
 
 export default function PlayerCard({ player, stats, title, onClick }) {
-  // Determine card tier based on win rate (with at least 1 game)
+  // Determine card tier based on absolute wins
   let tier = 'bronze';
-  if (stats && stats.games > 0) {
-    if (stats.winRate >= 60) tier = 'gold';
-    else if (stats.winRate >= 40) tier = 'silver';
+  if (stats) {
+    const wins = stats.wins || 0;
+    if (wins >= 6) tier = 'gold';
+    else if (wins >= 3) tier = 'silver';
   }
 
   // Map position to 3-letter FIFA code
@@ -36,8 +37,10 @@ export default function PlayerCard({ player, stats, title, onClick }) {
   // PHY (Physical): High for defenders and based on games played
   const phy = Math.round(50 + Math.min(40, games * 4) + (player.position === 'Zagueiro' ? 10 : 0));
 
-  // OVR (Overall rating): Dynamic OVR from stats, or initialOvr as fallback
-  const ovr = stats?.currentOvr ?? player.initialOvr ?? 60;
+  // OVR (Overall rating): Average of the 6 FUT stats
+  const ovr = games > 0 
+    ? Math.min(99, Math.round((pac + sho + pas + dri + def + phy) / 6))
+    : 50;
 
   return (
     <div className={`player-card-fut ${tier}`} onClick={onClick} role="button" tabIndex={0}>

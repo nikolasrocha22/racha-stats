@@ -18,7 +18,9 @@ export default function Settings() {
   const restrictions = useLiveQuery(() => db.restrictions.toArray());
 
   const [apiKey, setApiKey] = useState('');
+  const [nextMatchDate, setNextMatchDate] = useState('');
   const [saved, setSaved] = useState(false);
+  const [dateSaved, setDateSaved] = useState(false);
   const [newRestrA, setNewRestrA] = useState('');
   const [newRestrB, setNewRestrB] = useState('');
   const [importing, setImporting] = useState(false);
@@ -26,6 +28,9 @@ export default function Settings() {
   useEffect(() => {
     getSystemConfig('api_key').then(val => {
       if (val) setApiKey(val);
+    });
+    getSystemConfig('next_match_date').then(val => {
+      if (val) setNextMatchDate(val);
     });
   }, []);
 
@@ -36,6 +41,16 @@ export default function Settings() {
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       alert('Erro ao salvar chave: ' + err.message);
+    }
+  };
+
+  const saveNextMatchDate = async () => {
+    try {
+      await setSystemConfig('next_match_date', nextMatchDate);
+      setDateSaved(true);
+      setTimeout(() => setDateSaved(false), 2000);
+    } catch (err) {
+      alert('Erro ao salvar a data: ' + err.message);
     }
   };
 
@@ -85,6 +100,18 @@ export default function Settings() {
       <div className="page-header">
         <h1>⚙️ Configurações</h1>
         <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>← Voltar</button>
+      </div>
+
+      <div className="section-title">Agenda do racha</div>
+      <div className="card settings-card">
+        <div className="form-group">
+          <label className="form-label" htmlFor="next-match-date">Data da próxima partida</label>
+          <input id="next-match-date" type="date" className="form-input" value={nextMatchDate} min={new Date().toISOString().split('T')[0]} onChange={event => setNextMatchDate(event.target.value)} />
+        </div>
+        <p className="text-xs text-muted mb-sm">Essa data alimenta a contagem regressiva exibida na tela inicial.</p>
+        <button className="btn btn-primary btn-sm" onClick={saveNextMatchDate} disabled={!nextMatchDate}>
+          {dateSaved ? 'Data salva' : 'Salvar data'}
+        </button>
       </div>
 
       {/* API Key */}

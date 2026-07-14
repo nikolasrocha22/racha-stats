@@ -1,16 +1,30 @@
 import React from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
-import { db, useLiveQuery } from '../db';
+import { db, useLiveQuery, getSystemConfig } from '../db';
 import { getCraqueDaRodada, getAllPlayerStats } from '../utils/stats';
 import MatchCard from '../components/MatchCard';
 import { getInitials } from '../utils/formatters';
 
 const highlightMeta = {
-  muralha: { eyebrow: 'Dono do racha', stat: item => `${item.winRate}% de aproveitamento`, symbol: '01' },
-  artilheiro: { eyebrow: 'Artilheiro', stat: item => `${item.goals} gol${item.goals !== 1 ? 's' : ''}`, symbol: '02' },
-  garcom: { eyebrow: 'Garçom', stat: item => `${item.assists} assistência${item.assists !== 1 ? 's' : ''}`, symbol: '03' },
-  pernaDePau: { eyebrow: 'Lanterna', stat: item => `${item.losses} derrota${item.losses !== 1 ? 's' : ''}`, symbol: '04' },
+  muralha: { eyebrow: 'Dono do racha', stat: item => `${item.winRate}% de aproveitamento` },
+  artilheiro: { eyebrow: 'Artilheiro', stat: item => `${item.goals} gol${item.goals !== 1 ? 's' : ''}` },
+  garcom: { eyebrow: 'Garçom', stat: item => `${item.assists} assistência${item.assists !== 1 ? 's' : ''}` },
+  pernaDePau: { eyebrow: 'Lanterna', stat: item => `${item.losses} derrota${item.losses !== 1 ? 's' : ''}` },
 };
+
+function getCountdown(dateValue) {
+  if (!dateValue) return null;
+  const nextMatch = new Date(`${dateValue}T12:00:00`);
+  if (Number.isNaN(nextMatch.getTime())) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  nextMatch.setHours(0, 0, 0, 0);
+
+  const days = Math.ceil((nextMatch - today) / 86400000);
+  if (days < 0) return null;
+  return { days, date: nextMatch };
+}
 
 export default function Home() {
   const navigate = useNavigate();
@@ -19,9 +33,11 @@ export default function Home() {
   const players = useLiveQuery(() => db.players.toArray());
   const allGoals = useLiveQuery(() => db.goals.toArray());
   const [craque, setCraque] = React.useState(null);
+  const [nextMatchDate, setNextMatchDate] = React.useState(null);
   const [highlights, setHighlights] = React.useState({ artilheiro: null, garcom: null, muralha: null, pernaDePau: null });
 
   React.useEffect(() => { getCraqueDaRodada().then(setCraque); }, [matches]);
+  React.useEffect(() => { getSystemConfig('next_match_date').then(setNextMatchDate); }, []);
   React.useEffect(() => {
     getAllPlayerStats().then(allStats => {
       if (!allStats?.length) return;
@@ -35,6 +51,7 @@ export default function Home() {
   }, [players]);
 
   const highlightEntries = Object.entries(highlights).filter(([, value]) => value);
+  const countdown = getCountdown(nextMatchDate);
   const goToCraque = () => navigate(`/players/${craque.player.id}`);
 
   return (
@@ -50,9 +67,20 @@ export default function Home() {
         </button>
       </section>
 
+      {countdown && (
+        <section className="next-match-countdown" aria-label="Contagem regressiva para a próxima partida">
+          <div>
+            <span className="countdown-label">Próxima partida</span>
+            <strong>{countdown.days === 0 ? 'É hoje' : `Faltam ${countdown.days} dia${countdown.days !== 1 ? 's' : ''}`}</strong>
+            <time dateTime={nextMatchDate}>{countdown.date.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</time>
+          </div>
+          <span className="countdown-number" aria-hidden="true">{countdown.days}</span>
+        </section>
+      )}
+
       <section className="stats-grid home-stats" aria-label="Resumo geral">
-        {[['Partidas', matches?.length || 0], ['Jogadores', players?.length || 0], ['Gols marcados', allGoals?.length || 0]].map(([label, value], index) => (
-          <article className="stat-card" key={label}><span>0{index + 1}</span><div className="stat-card-value">{value}</div><div className="stat-card-label">{label}</div></article>
+        {[['Partidas', matches?.length || 0], ['Jogadores', players?.length || 0], ['Gols marcados', allGoals?.length || 0]].map(([label, value]) => (
+          <article className="stat-card" key={label}><div className="stat-card-value">{value}</div><div className="stat-card-label">{label}</div></article>
         ))}
       </section>
 
@@ -62,7 +90,7 @@ export default function Home() {
           <div className="highlights-grid">
             {highlightEntries.map(([key, item]) => {
               const meta = highlightMeta[key];
-              return <button className={`highlight-card highlight-${key}`} key={key} onClick={() => navigate(`/players/${item.player.id}`)}><span className="highlight-index">{meta.symbol}</span><span className="highlight-label">{meta.eyebrow}</span><strong>{item.player.nickname || item.player.name}</strong><small>{meta.stat(item)}</small></button>;
+              return <button className={`highlight-card highlight-${key}`} key={key} onClick={() => navigate(`/players/${item.player.id}`)}><span className="highlight-label">{meta.eyebrow}</span><strong>{item.player.nickname || item.player.name}</strong><small>{meta.stat(item)}</small></button>;
             })}
           </div>
         </section>

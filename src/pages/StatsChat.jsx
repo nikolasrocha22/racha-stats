@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { isAIConfigured, answerStatsQuestion } from '../ai';
+import { answerStatsQuestion } from '../ai';
 import { getStatsSummaryForAI } from '../utils/stats';
 
 const SUGGESTED = [
@@ -9,7 +9,70 @@ const SUGGESTED = [
   'Qual foi a maior goleada?',
   'Quem mais jogou?',
   'Qual o aproveitamento geral?',
+  'Compare os dois melhores jogadores',
 ];
+
+// Simple markdown renderer for AI responses
+function renderMarkdown(text) {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+  const elements = [];
+  let listItems = [];
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      elements.push(
+        <ul key={`list-${elements.length}`} className="chat-md-list">
+          {listItems.map((item, i) => <li key={i}>{processInline(item)}</li>)}
+        </ul>
+      );
+      listItems = [];
+    }
+  };
+
+  const processInline = (line) => {
+    // Bold **text**
+    const parts = [];
+    const regex = /\*\*(.+?)\*\*/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(line.substring(lastIndex, match.index));
+      }
+      parts.push(<strong key={match.index}>{match[1]}</strong>);
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < line.length) {
+      parts.push(line.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : line;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (line.startsWith('- ') || line.startsWith('• ')) {
+      listItems.push(line.substring(2));
+      continue;
+    }
+
+    flushList();
+
+    if (!line) {
+      elements.push(<br key={`br-${i}`} />);
+    } else {
+      elements.push(<p key={`p-${i}`} className="chat-md-paragraph">{processInline(line)}</p>);
+    }
+  }
+  flushList();
+
+  return elements;
+}
 
 export default function StatsChat() {
   const navigate = useNavigate();
@@ -39,26 +102,10 @@ export default function StatsChat() {
     setLoading(false);
   };
 
-  if (!isAIConfigured()) {
-    return (
-      <div className="page">
-        <div className="page-header">
-          <h1>💬 Chat de Stats</h1>
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>← Voltar</button>
-        </div>
-        <div className="empty-state">
-          <div className="empty-state-icon">🤖</div>
-          <div className="empty-state-text">Configure a API key do Gemini nas Configurações para usar o chat.</div>
-          <button className="btn btn-primary" onClick={() => navigate('/settings')}>⚙️ Configurações</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="page" style={{ padding: 0, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 70px)' }}>
       {/* Header */}
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="chat-header">
         <h2 style={{ fontSize: '1.1rem' }}>💬 Chat de Stats</h2>
         <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>← Voltar</button>
       </div>
@@ -81,7 +128,7 @@ export default function StatsChat() {
 
         {messages.map((m, i) => (
           <div key={i} className={`chat-bubble ${m.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`}>
-            {m.text}
+            {m.role === 'ai' ? renderMarkdown(m.text) : m.text}
           </div>
         ))}
 

@@ -7,9 +7,16 @@ export function useLiveQuery(queryFn, deps = []) {
 
   useEffect(() => {
     let active = true;
-    queryFn().then(res => {
-      if (active) setData(res);
-    });
+    const result = queryFn();
+    
+    if (result && typeof result.then === 'function') {
+      result.then(res => {
+        if (active) setData(res);
+      });
+    } else {
+      if (active) setData(result);
+    }
+    
     return () => { active = false; };
   }, deps);
 
@@ -386,3 +393,18 @@ export async function setSystemConfig(key, value) {
   const { error } = await supabase.from('config').upsert({ key, value });
   if (error) throw error;
 }
+
+// Presence Helpers using config key 'presence_list'
+export async function getPresenceList() {
+  const data = await getSystemConfig('presence_list');
+  try {
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function savePresenceList(list) {
+  await setSystemConfig('presence_list', JSON.stringify(list));
+}
+

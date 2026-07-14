@@ -1,0 +1,17 @@
+{
+  "short_name": "RachaStats",
+  "name": "Racha Stats — Histórico de Peladas",
+  "description": "O histórico oficial das suas peladas com FIFA stats, rankings e sorteador de times com IA.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#070c0a",
+  "theme_color": "#070c0a",
+  "display": "standalone",
+  "orientation": "portrait"
+}

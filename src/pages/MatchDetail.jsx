@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router';
+import { Calendar, MapPin, Trash2, Pencil, CircleDot, Share2, Sparkles } from 'lucide-react';
 import { getMatchDetails, deleteMatch, db } from '../db';
 import { formatDate, getInitials } from '../utils/formatters';
 import { isAIConfigured, generateMatchSummary } from '../ai';
@@ -12,13 +13,13 @@ export default function MatchDetail() {
   const [loading, setLoading] = React.useState(true);
   const [generatingAI, setGeneratingAI] = React.useState(false);
 
-  const load = async () => {
+  const load = React.useCallback(async () => {
     const m = await getMatchDetails(Number(id));
     setMatch(m);
     setLoading(false);
-  };
+  }, [id]);
 
-  React.useEffect(() => { load(); }, [id]);
+  React.useEffect(() => { load(); }, [load]);
 
   const handleDelete = async () => {
     if (!confirm('Tem certeza que deseja excluir esta partida?')) return;
@@ -81,44 +82,63 @@ export default function MatchDetail() {
         <button className="btn btn-secondary btn-sm" onClick={() => navigate('/matches')}>← Voltar</button>
         <div style={{ display: 'flex', gap: '8px' }}>
           {user && (
-            <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/matches/${id}/edit`)}>✏️</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/matches/${id}/edit`)}>
+              <Pencil size={14} />
+            </button>
           )}
           {isAdmin && (
-            <button className="btn btn-danger btn-sm" onClick={handleDelete}>🗑️</button>
+            <button className="btn btn-danger btn-sm" onClick={handleDelete}>
+              <Trash2 size={14} />
+            </button>
           )}
         </div>
       </div>
 
-      {/* Score header */}
-      <div className="card" style={{ marginBottom: '24px', textAlign: 'center', padding: '24px 16px' }}>
-        <div className="text-sm text-muted mb-sm">
-          📅 {formatDate(match.date)} {match.location && ` • 📍 ${match.location}`}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span className="match-card-team-dot" style={{ background: match.teamAColor }} />
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem' }}>{match.teamAName}</span>
-            </div>
-            <div style={{
-              fontFamily: 'var(--font-mono)', fontSize: '3rem', fontWeight: 700,
-              color: winner === 'A' ? 'var(--green-primary)' : 'var(--text-primary)'
-            }}>
-              {match.scoreA}
-            </div>
+      {/* TV Scoreboard Header */}
+      <div className="tv-scoreboard">
+        <div className="tv-meta-row">
+          <div className="tv-meta-item">
+            <Calendar size={13} />
+            <span>{formatDate(match.date)}</span>
           </div>
-          <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)', fontWeight: 700 }}>✕</span>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem' }}>{match.teamBName}</span>
-              <span className="match-card-team-dot" style={{ background: match.teamBColor }} />
+          {match.location && (
+            <div className="tv-meta-item">
+              <MapPin size={13} />
+              <span>{match.location}</span>
             </div>
-            <div style={{
-              fontFamily: 'var(--font-mono)', fontSize: '3rem', fontWeight: 700,
-              color: winner === 'B' ? 'var(--green-primary)' : 'var(--text-primary)'
-            }}>
-              {match.scoreB}
+          )}
+        </div>
+
+        <div className="tv-match-layout">
+          {/* Team A */}
+          <div className="tv-team team-a">
+            <div className="tv-team-name-row">
+              <span className="tv-color-dot" style={{ background: match.teamAColor }} />
+              <span className="tv-team-name">{match.teamAName}</span>
             </div>
+            {winner === 'A' && <span className="tv-winner-bar" />}
+          </div>
+
+          {/* Score A */}
+          <div className="tv-score">
+            {match.scoreA}
+          </div>
+
+          {/* TV Divider */}
+          <div className="tv-divider" />
+
+          {/* Score B */}
+          <div className="tv-score">
+            {match.scoreB}
+          </div>
+
+          {/* Team B */}
+          <div className="tv-team team-b">
+            <div className="tv-team-name-row">
+              <span className="tv-team-name">{match.teamBName}</span>
+              <span className="tv-color-dot" style={{ background: match.teamBColor }} />
+            </div>
+            {winner === 'B' && <span className="tv-winner-bar" />}
           </div>
         </div>
       </div>
@@ -167,7 +187,7 @@ export default function MatchDetail() {
           <div className="goal-timeline" style={{ marginBottom: '24px' }}>
             {match.goals.map((g, i) => (
               <div key={i} className="goal-item">
-                <span className="goal-icon">⚽</span>
+                <span className="goal-icon" style={{ display: 'flex', alignItems: 'center' }}><CircleDot size={16} /></span>
                 <div className="goal-info">
                   <div className="goal-scorer">
                     {g.scorer?.nickname || g.scorer?.name || 'Desconhecido'}
@@ -177,7 +197,7 @@ export default function MatchDetail() {
                   </div>
                   {g.assistant && (
                     <div className="goal-assist">
-                      🅰️ Assistência: {g.assistant.nickname || g.assistant.name}
+                      Assistência: {g.assistant.nickname || g.assistant.name}
                     </div>
                   )}
                 </div>
@@ -187,22 +207,28 @@ export default function MatchDetail() {
         </>
       )}
 
-      {/* AI Summary */}
-      <div className="section-title">Resumo IA</div>
+      {/* AI Summary (Coach Insights) */}
+      <div className="section-title">Análise do Treinador</div>
       {match.aiSummary ? (
-        <div className="ai-summary" style={{ marginBottom: '16px' }}>{match.aiSummary}</div>
-      ) : isAIConfigured() ? (
-        <button className="btn btn-secondary btn-block" onClick={handleGenerateSummary} disabled={generatingAI} style={{ marginBottom: '16px' }}>
-          {generatingAI ? '✨ Gerando resumo...' : '✨ Gerar Resumo com IA'}
-        </button>
-      ) : (
-        <div className="text-sm text-muted text-center" style={{ marginBottom: '16px' }}>
-          Configure a API key do Gemini nas ⚙️ Configurações para gerar resumos.
+        <div className="coach-insights" style={{ marginBottom: '16px' }}>
+          <div className="coach-insights-title">
+            <Sparkles size={14} />
+            <span>Relatório do Técnico (IA)</span>
+          </div>
+          <div className="coach-insights-text">
+            {match.aiSummary}
+          </div>
         </div>
+      ) : (
+        <button className="btn btn-secondary btn-block" onClick={handleGenerateSummary} disabled={generatingAI} style={{ marginBottom: '16px' }}>
+          <Sparkles size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+          <span>{generatingAI ? 'Gerando resumo...' : 'Gerar Resumo com IA'}</span>
+        </button>
       )}
 
       <button className="btn btn-primary btn-block" onClick={handleShareWhatsApp} style={{ marginTop: '8px', marginBottom: '24px' }}>
-        💬 Compartilhar no WhatsApp
+        <Share2 size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+        <span>Compartilhar no WhatsApp</span>
       </button>
     </div>
   );

@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useOutletContext } from 'react-router';
+import { ArrowLeft, Camera, Zap, Footprints, Handshake, Activity, Shield, Dumbbell } from 'lucide-react';
 import { db, useLiveQuery, addPlayer, updatePlayer } from '../db';
 import { POSITIONS } from '../utils/formatters';
+import { useToast } from '../components/ToastContext';
 
 export default function PlayerForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const { user, isAdmin } = useOutletContext();
   const isEdit = !!id;
   const fileRef = useRef();
@@ -30,7 +33,7 @@ export default function PlayerForm() {
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (existing && !loaded) {
       if (!isAdmin && existing.user_id && existing.user_id !== user?.id) {
         navigate(`/players/${id}`);
@@ -55,7 +58,6 @@ export default function PlayerForm() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      // Resize to max 300px
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -79,14 +81,16 @@ export default function PlayerForm() {
     try {
       if (isEdit) {
         await updatePlayer(Number(id), { name: name.trim(), nickname: nickname.trim(), position, photo, initialPac, initialSho, initialPas, initialDri, initialDef, initialPhy });
+        toast.success('Jogador atualizado com sucesso!');
         navigate(`/players/${id}`);
       } else {
         const user_id = isAdmin ? null : user?.id;
         const newId = await addPlayer({ name: name.trim(), nickname: nickname.trim(), position, photo, user_id, initialPac, initialSho, initialPas, initialDri, initialDef, initialPhy });
+        toast.success('Jogador cadastrado com sucesso!');
         navigate(`/players/${newId}`);
       }
     } catch (err) {
-      alert('Erro ao salvar: ' + err.message);
+      toast.error('Erro ao salvar: ' + err.message);
     }
     setSaving(false);
   };
@@ -99,7 +103,10 @@ export default function PlayerForm() {
     <div className="page">
       <div className="page-header">
         <h1>{isEdit ? '✏️ Editar Jogador' : '➕ Novo Jogador'}</h1>
-        <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>← Voltar</button>
+        <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>
+          <ArrowLeft size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+          <span>Voltar</span>
+        </button>
       </div>
 
       {/* Photo */}
@@ -108,7 +115,7 @@ export default function PlayerForm() {
           {photo ? (
             <img src={photo} alt="Preview" />
           ) : (
-            <span style={{ fontSize: '2rem', opacity: 0.3 }}>📷</span>
+            <span style={{ color: 'var(--text-muted)' }}><Camera size={32} /></span>
           )}
         </div>
         <span className="photo-upload-text">Toque para {photo ? 'trocar' : 'adicionar'} foto</span>
@@ -140,8 +147,11 @@ export default function PlayerForm() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
         
         <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>⚡ Ritmo (PAC)</span>
+          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Zap size={14} color="var(--gold)" />
+              <span>Ritmo (PAC)</span>
+            </span>
             <span style={{ fontWeight: '800', color: 'var(--gold)' }}>{initialPac}</span>
           </label>
           <input type="range" min="40" max="99" className="form-input" style={{ padding: '8px 0', cursor: 'pointer' }}
@@ -149,8 +159,11 @@ export default function PlayerForm() {
         </div>
 
         <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>👟 Chute (SHO)</span>
+          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Footprints size={14} color="var(--gold)" />
+              <span>Chute (SHO)</span>
+            </span>
             <span style={{ fontWeight: '800', color: 'var(--gold)' }}>{initialSho}</span>
           </label>
           <input type="range" min="40" max="99" className="form-input" style={{ padding: '8px 0', cursor: 'pointer' }}
@@ -158,8 +171,11 @@ export default function PlayerForm() {
         </div>
 
         <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>🤝 Passe (PAS)</span>
+          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Handshake size={14} color="var(--gold)" />
+              <span>Passe (PAS)</span>
+            </span>
             <span style={{ fontWeight: '800', color: 'var(--gold)' }}>{initialPas}</span>
           </label>
           <input type="range" min="40" max="99" className="form-input" style={{ padding: '8px 0', cursor: 'pointer' }}
@@ -167,8 +183,11 @@ export default function PlayerForm() {
         </div>
 
         <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>🌀 Drible (DRI)</span>
+          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Activity size={14} color="var(--gold)" />
+              <span>Drible (DRI)</span>
+            </span>
             <span style={{ fontWeight: '800', color: 'var(--gold)' }}>{initialDri}</span>
           </label>
           <input type="range" min="40" max="99" className="form-input" style={{ padding: '8px 0', cursor: 'pointer' }}
@@ -176,8 +195,11 @@ export default function PlayerForm() {
         </div>
 
         <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>🛡️ Defesa (DEF)</span>
+          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Shield size={14} color="var(--gold)" />
+              <span>Defesa (DEF)</span>
+            </span>
             <span style={{ fontWeight: '800', color: 'var(--gold)' }}>{initialDef}</span>
           </label>
           <input type="range" min="40" max="99" className="form-input" style={{ padding: '8px 0', cursor: 'pointer' }}
@@ -185,8 +207,11 @@ export default function PlayerForm() {
         </div>
 
         <div className="form-group">
-          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>💪 Físico (PHY)</span>
+          <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Dumbbell size={14} color="var(--gold)" />
+              <span>Físico (PHY)</span>
+            </span>
             <span style={{ fontWeight: '800', color: 'var(--gold)' }}>{initialPhy}</span>
           </label>
           <input type="range" min="40" max="99" className="form-input" style={{ padding: '8px 0', cursor: 'pointer' }}

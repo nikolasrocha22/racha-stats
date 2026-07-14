@@ -169,26 +169,48 @@ export const db = {
 // ── CRUD Helpers ──
 
 export async function addPlayer({ name, nickname, photo, position, user_id = null, initialPac = 60, initialSho = 60, initialPas = 60, initialDri = 60, initialDef = 60, initialPhy = 60 }) {
-  const { data, error } = await supabase
-    .from('players')
-    .insert([{
-      name,
-      nickname: nickname || '',
-      photo_url: photo || '',
-      position: position || '',
-      user_id,
-      initial_pac: initialPac,
-      initial_sho: initialSho,
-      initial_pas: initialPas,
-      initial_dri: initialDri,
-      initial_def: initialDef,
-      initial_phy: initialPhy
-    }])
-    .select()
-    .single();
+  const insertData = {
+    name,
+    nickname: nickname || '',
+    photo_url: photo || '',
+    position: position || '',
+    user_id
+  };
 
-  if (error) throw error;
-  return data.id;
+  // Try with attribute columns first, fall back without them if columns don't exist
+  try {
+    insertData.initial_pac = initialPac;
+    insertData.initial_sho = initialSho;
+    insertData.initial_pas = initialPas;
+    insertData.initial_dri = initialDri;
+    insertData.initial_def = initialDef;
+    insertData.initial_phy = initialPhy;
+
+    const result = await supabase
+      .from('players')
+      .insert([insertData])
+      .select('id')
+      .single();
+
+    if (result.error) {
+      // If error mentions column doesn't exist, retry without attribute columns
+      if (result.error.message && result.error.message.includes('initial_')) {
+        delete insertData.initial_pac;
+        delete insertData.initial_sho;
+        delete insertData.initial_pas;
+        delete insertData.initial_dri;
+        delete insertData.initial_def;
+        delete insertData.initial_phy;
+        const retry = await supabase.from('players').insert([insertData]).select('id').single();
+        if (retry.error) throw retry.error;
+        return retry.data.id;
+      }
+      throw result.error;
+    }
+    return result.data.id;
+  } catch (err) {
+    throw err;
+  }
 }
 
 export async function updatePlayer(id, changes) {
@@ -197,15 +219,38 @@ export async function updatePlayer(id, changes) {
     mapped.photo_url = changes.photo;
     delete mapped.photo;
   }
-  if ('initialPac' in changes) { mapped.initial_pac = changes.initialPac; delete mapped.initialPac; }
-  if ('initialSho' in changes) { mapped.initial_sho = changes.initialSho; delete mapped.initialSho; }
-  if ('initialPas' in changes) { mapped.initial_pas = changes.initialPas; delete mapped.initialPas; }
-  if ('initialDri' in changes) { mapped.initial_dri = changes.initialDri; delete mapped.initialDri; }
-  if ('initialDef' in changes) { mapped.initial_def = changes.initialDef; delete mapped.initialDef; }
-  if ('initialPhy' in changes) { mapped.initial_phy = changes.initialPhy; delete mapped.initialPhy; }
 
+  // Map camelCase attribute names to snake_case DB columns
+  const attrMap = {
+    initialPac: 'initial_pac', initialSho: 'initial_sho',
+    initialPas: 'initial_pas', initialDri: 'initial_dri',
+    initialDef: 'initial_def', initialPhy: 'initial_phy'
+  };
+  const attrColumns = {};
+  for (const [camel, snake] of Object.entries(attrMap)) {
+    if (camel in mapped) {
+      attrColumns[snake] = mapped[camel];
+      delete mapped[camel];
+    }
+  }
+
+  // Merge attribute columns into mapped
+  Object.assign(mapped, attrColumns);
+
+  // Try update
   const { error } = await supabase.from('players').update(mapped).eq('id', id);
-  if (error) throw error;
+  if (error) {
+    // If columns don't exist, retry without attribute columns
+    if (error.message && error.message.includes('initial_')) {
+      for (const snake of Object.values(attrMap)) {
+        delete mapped[snake];
+      }
+      const { error: retryErr } = await supabase.from('players').update(mapped).eq('id', id);
+      if (retryErr) throw retryErr;
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function deletePlayer(id) {

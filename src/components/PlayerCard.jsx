@@ -31,8 +31,15 @@ export default function PlayerCard({ player, stats, title, onClick }) {
   // OVR is the average of current attributes (either calculated from stats or fallback)
   const ovr = stats?.currentOvr ?? Math.round((pac + sho + pas + dri + def + phy) / 6);
 
+  const handleKeyDown = event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
-    <div className={`player-card-fut ${tier}`} onClick={onClick} role="button" tabIndex={0}>
+    <div className={`player-card-fut ${tier}`} onClick={onClick} onKeyDown={handleKeyDown} role="button" tabIndex={0}>
       {/* FUT Top section with OVR and Position */}
       <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

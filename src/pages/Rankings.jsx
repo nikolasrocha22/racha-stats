@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import { Trophy, Footprints, Handshake, Activity, Calendar, Search } from 'lucide-react';
 import { getRankings } from '../utils/stats';
 import { getInitials } from '../utils/formatters';
 
 const CATEGORIES = [
-  { key: 'goals', label: '⚽ Artilheiros', valueLabel: 'Gols' },
-  { key: 'assists', label: '🅰️ Assistências', valueLabel: 'Assists' },
-  { key: 'winRate', label: '📈 Aproveitamento', valueLabel: '%' },
-  { key: 'games', label: '🏟️ Mais Jogos', valueLabel: 'Jogos' },
+  { key: 'goals', label: 'Artilheiros', icon: 'goals', valueLabel: 'Gols' },
+  { key: 'assists', label: 'Assistências', icon: 'assists', valueLabel: 'Assists' },
+  { key: 'winRate', label: 'Aproveitamento', icon: 'winRate', valueLabel: '%' },
+  { key: 'games', label: 'Mais Jogos', icon: 'games', valueLabel: 'Jogos' },
 ];
 
 const PERIODS = [
@@ -34,6 +35,7 @@ export default function Rankings() {
   const currentCat = CATEGORIES.find(c => c.key === category);
 
   const getRankMedal = (idx) => {
+    // Medal emojis are universally recognized awards and remain as exceptions
     if (idx === 0) return { class: 'gold', emoji: '🥇' };
     if (idx === 1) return { class: 'silver', emoji: '🥈' };
     if (idx === 2) return { class: 'bronze', emoji: '🥉' };
@@ -50,18 +52,32 @@ export default function Rankings() {
     }
   };
 
+  const renderCategoryIcon = (key, size = 16) => {
+    switch (key) {
+      case 'goals': return <Footprints size={size} style={{ marginRight: '6px', verticalAlign: 'middle' }} />;
+      case 'assists': return <Handshake size={size} style={{ marginRight: '6px', verticalAlign: 'middle' }} />;
+      case 'winRate': return <Activity size={size} style={{ marginRight: '6px', verticalAlign: 'middle' }} />;
+      case 'games': return <Calendar size={size} style={{ marginRight: '6px', verticalAlign: 'middle' }} />;
+      default: return null;
+    }
+  };
+
   return (
     <div className="page">
       <div className="page-header">
-        <h1>🏆 Rankings</h1>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Trophy size={22} />
+          <span>Rankings</span>
+        </h1>
       </div>
 
       {/* Category Tabs */}
       <div className="tabs">
         {CATEGORIES.map(c => (
           <button key={c.key} className={`tab ${category === c.key ? 'active' : ''}`}
-            onClick={() => setCategory(c.key)}>
-            {c.label}
+            onClick={() => setCategory(c.key)} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            {renderCategoryIcon(c.key, 14)}
+            <span>{c.label}</span>
           </button>
         ))}
       </div>
@@ -109,7 +125,7 @@ export default function Rankings() {
         </div>
       ) : (
         <div className="empty-state">
-          <div className="empty-state-icon">🏆</div>
+          <div className="empty-state-icon"><Trophy size={48} style={{ opacity: 0.5 }} /></div>
           <div className="empty-state-text">Sem dados suficientes para ranking.</div>
         </div>
       )}

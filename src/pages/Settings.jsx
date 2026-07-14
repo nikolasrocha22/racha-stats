@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
-import { db, useLiveQuery, addRestriction, deleteRestriction, exportAllData, importAllData, getSystemConfig, setSystemConfig } from '../db';
-import { getInitials } from '../utils/formatters';
+import { Settings as SettingsIcon, ArrowLeft, Cpu, Sparkles, Plus, X, Download, Upload, Info } from 'lucide-react';
+import { db, useLiveQuery, addRestriction, deleteRestriction, exportAllData, importAllData } from '../db';
+import { useToast } from '../components/ToastContext';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { user, isAdmin } = useOutletContext();
+  const toast = useToast();
+  const { isAdmin } = useOutletContext();
 
   // Protect Settings page
   useEffect(() => {
@@ -17,38 +19,25 @@ export default function Settings() {
   const players = useLiveQuery(() => db.players.toArray());
   const restrictions = useLiveQuery(() => db.restrictions.toArray());
 
-  const [apiKey, setApiKey] = useState('');
-  const [saved, setSaved] = useState(false);
   const [newRestrA, setNewRestrA] = useState('');
   const [newRestrB, setNewRestrB] = useState('');
   const [importing, setImporting] = useState(false);
 
-  useEffect(() => {
-    getSystemConfig('api_key').then(val => {
-      if (val) setApiKey(val);
-    });
-  }, []);
-
-  const saveApiKey = async () => {
-    try {
-      await setSystemConfig('api_key', apiKey.trim());
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      alert('Erro ao salvar chave: ' + err.message);
-    }
-  };
-
   const handleExport = async () => {
-    const data = await exportAllData();
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `racha-stats-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const data = await exportAllData();
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `racha-stats-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Backup exportado com sucesso!');
+    } catch (err) {
+      toast.error('Erro ao exportar backup: ' + err.message);
+    }
   };
 
   const handleImport = async (e) => {
@@ -60,19 +49,33 @@ export default function Settings() {
       const text = await file.text();
       const data = JSON.parse(text);
       await importAllData(data);
-      alert('✅ Dados importados com sucesso!');
+      toast.success('Dados importados com sucesso!');
       window.location.reload();
     } catch (err) {
-      alert('❌ Erro ao importar: ' + err.message);
+      toast.error('Erro ao importar: ' + err.message);
     }
     setImporting(false);
   };
 
   const handleAddRestriction = async () => {
     if (!newRestrA || !newRestrB || newRestrA === newRestrB) return;
-    await addRestriction(Number(newRestrA), Number(newRestrB));
-    setNewRestrA('');
-    setNewRestrB('');
+    try {
+      await addRestriction(Number(newRestrA), Number(newRestrB));
+      toast.success('Restrição adicionada com sucesso!');
+      setNewRestrA('');
+      setNewRestrB('');
+    } catch (err) {
+      toast.error('Erro ao adicionar restrição: ' + err.message);
+    }
+  };
+
+  const handleDeleteRestriction = async (id) => {
+    try {
+      await deleteRestriction(id);
+      toast.success('Restrição removida!');
+    } catch (err) {
+      toast.error('Erro ao remover: ' + err.message);
+    }
   };
 
   const getPlayerName = (id) => {
@@ -83,24 +86,32 @@ export default function Settings() {
   return (
     <div className="page">
       <div className="page-header">
-        <h1>⚙️ Configurações</h1>
-        <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>← Voltar</button>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <SettingsIcon size={22} />
+          <span>Configurações</span>
+        </h1>
+        <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}>
+          <ArrowLeft size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+          <span>Voltar</span>
+        </button>
       </div>
 
-      {/* API Key */}
-      <div className="section-title">🤖 API Key (Gemini ou NVIDIA)</div>
+      {/* AI Status */}
+      <div className="section-title">🤖 Inteligência Artificial</div>
       <div className="card" style={{ marginBottom: '24px' }}>
-        <div className="form-group" style={{ marginBottom: '8px' }}>
-          <label className="form-label">API Key</label>
-          <input type="password" className="form-input" value={apiKey} onChange={e => setApiKey(e.target.value)}
-            placeholder="Cole sua API key (Gemini ou NVIDIA nvapi-)..." />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ color: 'var(--green-primary)', display: 'flex', alignItems: 'center' }}><Cpu size={32} /></span>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>IA Configurada no Servidor</div>
+            <p className="text-xs text-muted" style={{ marginTop: '4px' }}>
+              Modelo: NVIDIA Nemotron Super 49B · A chave da API está configurada no servidor — todos os usuários podem usar as features de IA automaticamente.
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-muted mb-sm">
-          Aceita chaves do Google Gemini ou NVIDIA (iniciando com <code>nvapi-</code>). Atualmente, a chave NVIDIA Nemotron de teste está ativa por padrão.
-        </p>
-        <button className="btn btn-primary btn-sm" onClick={saveApiKey}>
-          {saved ? '✓ Salva!' : 'Salvar Key'}
-        </button>
+        <div className="text-xs text-muted" style={{ marginTop: '12px', padding: '8px', background: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Sparkles size={12} color="var(--gold)" />
+          <span>Resumo de partida · Sorteio equilibrado · Chat de stats · Títulos de jogadores</span>
+        </div>
       </div>
 
       {/* Restrictions */}
@@ -111,7 +122,9 @@ export default function Settings() {
         {(restrictions || []).map(r => (
           <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
             <span className="text-sm">🚫 {getPlayerName(r.playerAId)} + {getPlayerName(r.playerBId)}</span>
-            <button className="btn btn-danger btn-sm" onClick={() => deleteRestriction(r.id)} style={{ padding: '4px 8px' }}>✕</button>
+            <button className="btn btn-danger btn-sm" onClick={() => handleDeleteRestriction(r.id)} style={{ padding: '4px 8px' }}>
+              <X size={12} />
+            </button>
           </div>
         ))}
 
@@ -125,7 +138,9 @@ export default function Settings() {
             {(players || []).filter(p => String(p.id) !== newRestrA).map(p => <option key={p.id} value={p.id}>{p.nickname || p.name}</option>)}
           </select>
           <button className="btn btn-primary btn-sm" onClick={handleAddRestriction}
-            disabled={!newRestrA || !newRestrB}>+</button>
+            disabled={!newRestrA || !newRestrB}>
+            <Plus size={14} />
+          </button>
         </div>
       </div>
 
@@ -134,9 +149,13 @@ export default function Settings() {
       <div className="card" style={{ marginBottom: '24px' }}>
         <p className="text-xs text-muted mb-md">Exporte seus dados como JSON para backup ou transfira para outro navegador.</p>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary" style={{ flex: 1 }} onClick={handleExport}>📥 Exportar</button>
-          <label className="btn btn-secondary" style={{ flex: 1, cursor: 'pointer' }}>
-            📤 Importar
+          <button className="btn btn-secondary" style={{ flex: 1, display: 'inline-flex', alignItems: 'center', gap: '6px' }} onClick={handleExport}>
+            <Download size={14} />
+            <span>Exportar</span>
+          </button>
+          <label className="btn btn-secondary" style={{ flex: 1, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+            <Upload size={14} />
+            <span>Importar</span>
             <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} disabled={importing} />
           </label>
         </div>
@@ -146,10 +165,10 @@ export default function Settings() {
       <div className="section-title">ℹ️ Sobre</div>
       <div className="card">
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>⚽</div>
+          <div style={{ color: 'var(--green-primary)', display: 'flex', justifyContent: 'center', marginBottom: '8px' }}><Info size={32} /></div>
           <h3>Racha Stats</h3>
           <p className="text-sm text-muted">O histórico oficial das suas peladas</p>
-          <p className="text-xs text-muted mt-sm">v1.0.0 • Dados salvos localmente</p>
+          <p className="text-xs text-muted mt-sm">v2.0.0 • Dados no Supabase • IA NVIDIA Nemotron</p>
         </div>
       </div>
     </div>

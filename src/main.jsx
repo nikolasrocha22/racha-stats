@@ -15,6 +15,8 @@ import TeamDraw from './pages/TeamDraw';
 import StatsChat from './pages/StatsChat';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import HeadToHead from './pages/HeadToHead';
+import NextMatch from './pages/NextMatch';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -37,6 +39,8 @@ const router = createBrowserRouter([
       { path: 'stats-chat', element: <StatsChat /> },
       { path: 'settings', element: <Settings /> },
       { path: 'login', element: <Login /> },
+      { path: 'head-to-head', element: <HeadToHead /> },
+      { path: 'next-match', element: <NextMatch /> },
     ]
   }
 ]);

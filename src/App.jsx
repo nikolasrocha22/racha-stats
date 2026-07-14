@@ -1,28 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Outlet } from 'react-router';
 import Navbar from './components/Navbar';
 import { supabase, ADMIN_EMAIL } from './supabaseClient';
+import { ToastProvider } from './components/ToastContext';
 
 export default function App() {
-  const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshSession = useCallback(async () => {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    setSession(currentSession);
+    return currentSession;
+  }, []);
+
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      setSession(initialSession);
+    refreshSession().then(() => {
       setLoading(false);
     });
 
     // Listen to changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refreshSession]);
 
   const user = session?.user || null;
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -36,9 +41,9 @@ export default function App() {
   }
 
   return (
-    <>
-      <Outlet context={{ session, user, isAdmin }} />
+    <ToastProvider>
+      <Outlet context={{ session, user, isAdmin, setSession, refreshSession }} />
       <Navbar user={user} />
-    </>
+    </ToastProvider>
   );
 }

@@ -10,8 +10,22 @@ CREATE TABLE IF NOT EXISTS players (
   nickname TEXT,
   photo_url TEXT,
   position TEXT,
-  user_id UUID UNIQUE -- Vincula ao auth.users do Supabase
+  user_id UUID, -- Vincula ao auth.users do Supabase
+  initial_pac INT NOT NULL DEFAULT 60,
+  initial_sho INT NOT NULL DEFAULT 60,
+  initial_pas INT NOT NULL DEFAULT 60,
+  initial_dri INT NOT NULL DEFAULT 60,
+  initial_def INT NOT NULL DEFAULT 60,
+  initial_phy INT NOT NULL DEFAULT 60
 );
+
+-- SE A TABELA DE JOGADORES JÁ EXISTE, RODE ESTAS LINHAS NO SQL EDITOR:
+-- ALTER TABLE players ADD COLUMN IF NOT EXISTS initial_pac INT NOT NULL DEFAULT 60;
+-- ALTER TABLE players ADD COLUMN IF NOT EXISTS initial_sho INT NOT NULL DEFAULT 60;
+-- ALTER TABLE players ADD COLUMN IF NOT EXISTS initial_pas INT NOT NULL DEFAULT 60;
+-- ALTER TABLE players ADD COLUMN IF NOT EXISTS initial_dri INT NOT NULL DEFAULT 60;
+-- ALTER TABLE players ADD COLUMN IF NOT EXISTS initial_def INT NOT NULL DEFAULT 60;
+-- ALTER TABLE players ADD COLUMN IF NOT EXISTS initial_phy INT NOT NULL DEFAULT 60;
 
 -- 2. Tabela de Partidas
 CREATE TABLE IF NOT EXISTS matches (
@@ -75,7 +89,6 @@ CREATE POLICY "Leitura pública matches" ON matches FOR SELECT USING (true);
 CREATE POLICY "Leitura pública lineups" ON lineups FOR SELECT USING (true);
 CREATE POLICY "Leitura pública goals" ON goals FOR SELECT USING (true);
 CREATE POLICY "Leitura pública restrictions" ON restrictions FOR SELECT USING (true);
-CREATE POLICY "Leitura pública config" ON config FOR SELECT USING (true);
 
 -- Permissões de escrita (Qualquer usuário autenticado pode cadastrar partidas/gols)
 CREATE POLICY "Escrita autenticada matches" ON matches FOR ALL TO authenticated USING (true);
@@ -86,16 +99,16 @@ CREATE POLICY "Escrita autenticada goals" ON goals FOR ALL TO authenticated USIN
 CREATE POLICY "Inserir players" ON players FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Atualizar próprio player" ON players FOR UPDATE TO authenticated USING (
   -- Permite se for o próprio usuário vinculado ou se for Admin
-  auth.uid() = user_id OR auth.email() = 'nikolas@example.com' -- Admin fallback (mude para seu e-mail do Supabase)
+  auth.uid() = user_id OR auth.email() = 'nikolas.rocha.santos22@gmail.com' -- Admin fallback (mude para seu e-mail do Supabase)
 );
 
 -- Admin apenas (restrictions e config)
 CREATE POLICY "Admin config" ON config FOR ALL TO authenticated USING (
-  auth.email() = 'nikolas@example.com'
+  auth.email() = 'nikolas.rocha.santos22@gmail.com'
 );
 CREATE POLICY "Admin restrictions" ON restrictions FOR ALL TO authenticated USING (
-  auth.email() = 'nikolas@example.com'
+  auth.email() = 'nikolas.rocha.santos22@gmail.com'
 );
 CREATE POLICY "Admin players delete" ON players FOR DELETE TO authenticated USING (
-  auth.email() = 'nikolas@example.com'
+  auth.email() = 'nikolas.rocha.santos22@gmail.com'
 );

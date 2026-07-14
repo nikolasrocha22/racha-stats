@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
+import { CircleDot, Search, Plus, Filter } from 'lucide-react';
 import { db, useLiveQuery } from '../db';
 import MatchCard from '../components/MatchCard';
 
@@ -14,6 +15,7 @@ export default function Matches() {
   const [filterTeam, setFilterTeam] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const filtered = React.useMemo(() => {
     if (!matches) return [];
@@ -38,19 +40,22 @@ export default function Matches() {
     return result;
   }, [matches, lineups, filterPlayer, filterTeam, filterDateFrom, filterDateTo]);
 
-  const [showFilters, setShowFilters] = useState(false);
-
   return (
     <div className="page">
       <div className="page-header">
-        <h1>⚽ Partidas</h1>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <CircleDot size={22} />
+          <span>Partidas</span>
+        </h1>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary btn-sm" onClick={() => setShowFilters(!showFilters)}>
-            🔍 Filtros
+          <button className="btn btn-secondary btn-sm" onClick={() => setShowFilters(!showFilters)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <Filter size={14} />
+            <span>Filtros</span>
           </button>
           {user && (
-            <button className="btn btn-primary btn-sm" onClick={() => navigate('/matches/new')}>
-              + Nova
+            <button className="btn btn-primary btn-sm" onClick={() => navigate('/matches/new')} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Plus size={14} />
+              <span>Nova</span>
             </button>
           )}
         </div>
@@ -102,7 +107,7 @@ export default function Matches() {
         </div>
       ) : matches && matches.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">⚽</div>
+          <div className="empty-state-icon"><CircleDot size={48} style={{ opacity: 0.5 }} /></div>
           <div className="empty-state-text">Nenhuma partida registrada.<br />Hora de bater uma bola!</div>
           {user ? (
             <button className="btn btn-primary" onClick={() => navigate('/matches/new')}>
@@ -116,7 +121,7 @@ export default function Matches() {
         </div>
       ) : (
         <div className="empty-state">
-          <div className="empty-state-icon">🔍</div>
+          <div className="empty-state-icon"><Search size={48} style={{ opacity: 0.5 }} /></div>
           <div className="empty-state-text">Nenhuma partida encontrada com esses filtros.</div>
         </div>
       )}

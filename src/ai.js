@@ -112,30 +112,41 @@ export async function generateBalancedTeams(players, stats, restrictions, natura
   const shuffledPlayers = shuffleArray(players);
   const playerIds = players.map(p => p.id);
 
+  // Map restrictions to include both names and IDs for absolute clarity to the AI
+  const playerMap = Object.fromEntries(players.map(p => [p.id, p.name]));
+  const formattedRestrictions = (restrictions || []).map(r => ({
+    playerA: `${playerMap[r.playerAId] || `Jogador ${r.playerAId}`} (ID: ${r.playerAId})`,
+    playerB: `${playerMap[r.playerBId] || `Jogador ${r.playerBId}`} (ID: ${r.playerBId})`,
+    description: r.description || ''
+  }));
+
   const system = `Você é um assistente encarregado de sortear os times de uma pelada de futebol.
 Sua principal tarefa é dividir os jogadores fornecidos em 2 times ("teamA" e "teamB") respeitando as restrições de duplas e regras adicionais em linguagem natural fornecidas pelo usuário.
 
 REGRAS CRÍTICAS:
-1. REGRAS EM LINGUAGEM NATURAL: Priorize totalmente as regras em linguagem natural inseridas pelo usuário (ex: "fulano e ciclano no mesmo time", "goleiros separados", "João no time A", etc.).
-2. RESTRIÇÕES DE DUPLAS: Respeite a lista de restrições (jogadores que não podem ficar no mesmo time).
-3. DISTRIBUIÇÃO TOTAL: Todos os IDs de jogadores fornecidos na lista de disponíveis devem ser distribuídos. Nenhum jogador pode ficar de fora.
-4. EQUILÍBRIO DE QUANTIDADE: O Time A (teamA) e o Time B (teamB) devem ter exatamente o mesmo número de jogadores (ou diferença de no máximo 1 jogador se for ímpar).
-5. ALEATORIEDADE: Faça um sorteio real com base nas regras. Mude as composições dos times a cada chamada se os mesmos jogadores forem passados, mantendo apenas as regras fixas respeitadas.
+1. REGRAS EM LINGUAGEM NATURAL: Priorize totalmente e de forma estrita as regras em linguagem natural inseridas pelo usuário (ex: "fulano e ciclano no mesmo time", "goleiros separados", "João no time A", etc.). 
+   Se o usuário digitar regras de agrupamento ou separação, você DEVE cumpri-las.
+2. MAPEAMENTO DE NOMES: Se a regra em linguagem de usuário mencionar um nome parcial ou apelido (ex: "Beto"), mapeie de forma inteligente para o jogador correspondente (ex: "Carlos Roberto (Beto)").
+3. RESTRIÇÕES DE DUPLAS: Respeite a lista de restrições (jogadores que não podem ficar no mesmo time).
+4. EQUILÍBRIO TÉCNICO: Divida os times de forma equilibrada! O somatório do OVR (Overall) e a média da taxa de vitórias (winRate) de cada time devem ser os mais próximos possíveis para garantir competitividade.
+5. DISTRIBUIÇÃO TOTAL: Todos os IDs de jogadores fornecidos na lista de disponíveis devem ser distribuídos. Nenhum jogador pode ficar de fora.
+6. EQUILÍBRIO DE QUANTIDADE: O Time A (teamA) e o Time B (teamB) devem ter exatamente o mesmo número de jogadores (ou diferença de no máximo 1 jogador se for ímpar).
+7. ALEATORIEDADE: Faça um sorteio real com base nas regras. Mude as composições dos times a cada chamada se os mesmos jogadores forem passados, mantendo apenas as regras fixas respeitadas.
 
-RESPOSTA: Retorne APENAS um JSON válido com esta estrutura exata (sem markdown, sem backticks):
+RESPOSTA: Retorne APENAS um JSON válido com esta estrutura exata (sem markdown, sem backticks \`\`\`json):
 {
   "teamA": [lista de IDs dos jogadores],
   "teamB": [lista de IDs dos jogadores],
-  "announcement": "Texto divertido e empolgante anunciando os times, mencionando os jogadores por nome/apelido, como um apresentador de TV",
+  "announcement": "Texto divertido e empolgante anunciando os times, como um narrador profissional de TV",
   "analysis": "Breve análise das características ou equilíbrio dos times formados",
-  "impossible": null ou "explicação se alguma restrição não pôde ser cumprida"
+  "impossible": null ou "explicação se alguma restrição ou regra não pôde ser cumprida"
 }`;
 
-  const user = `Jogadores disponíveis:
-${JSON.stringify(shuffledPlayers.map(p => ({ id: p.id, name: p.name, position: p.position })), null, 2)}
+  const user = `Jogadores disponíveis (com OVR e winRate para equilíbrio):
+${JSON.stringify(shuffledPlayers.map(p => ({ id: p.id, name: p.name, position: p.position, ovr: p.ovr || 60, winRate: p.winRate || 50 })), null, 2)}
 
 Restrições (não podem ficar no mesmo time):
-${JSON.stringify(restrictions || [], null, 2)}
+${JSON.stringify(formattedRestrictions, null, 2)}
 
 Regras adicionais em linguagem natural:
 ${naturalLanguageRules || 'Nenhuma'}`;

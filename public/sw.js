@@ -1,7 +1,5 @@
-const CACHE_NAME = 'racha-stats-v3';
+const CACHE_NAME = 'racha-stats-v5';
 const ASSETS = [
-  '/',
-  '/index.html',
   '/favicon.svg'
 ];
 

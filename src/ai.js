@@ -4,6 +4,7 @@
 import { localBalancedDraw, shuffleArray } from './utils/teamBalance.js';
 
 async function generate(systemPrompt, userPrompt) {
+  console.log("Calling /api/ai with prompts:", { systemPrompt, userPrompt });
   const response = await fetch('/api/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -11,6 +12,7 @@ async function generate(systemPrompt, userPrompt) {
   });
 
   const data = await response.json();
+  console.log("API response data:", data);
 
   if (!response.ok) {
     throw new Error(data.error || `Erro na IA (${response.status})`);

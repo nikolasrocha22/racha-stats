@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation, useOutletContext } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dices, Share2, Plus, RefreshCw, Sparkles, AlertTriangle } from 'lucide-react';
 import { db, useLiveQuery } from '../db';
@@ -60,8 +60,11 @@ export default function TeamDraw() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
+  const { user } = useOutletContext();
   const players = useLiveQuery(() => db.players.orderBy('name').toArray());
   const restrictions = useLiveQuery(() => db.restrictions.toArray());
+  const currentPlayer = (players || []).find(p => p.user_id === user?.id);
+  const currentUserName = currentPlayer ? (currentPlayer.nickname || currentPlayer.name) : null;
 
   const [selected, setSelected] = useState([]);
   const [prefilledApplied, setPrefilledApplied] = useState(false);
@@ -130,17 +133,9 @@ export default function TeamDraw() {
 
         const aiResult = await generateBalancedTeams(
           selectedPlayers,
-          selectedPlayers.map(p => ({
-            id: p.id,
-            name: p.name,
-            position: p.position,
-            ovr: p.ovr,
-            goals: p.goals,
-            games: p.games,
-            winRate: p.winRate
-          })),
           restrictions || [],
-          extraRules
+          extraRules,
+          currentUserName
         );
         teamA = aiResult.teamA || [];
         teamB = aiResult.teamB || [];

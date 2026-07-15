@@ -12,9 +12,21 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.NVIDIA_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'NVIDIA_API_KEY não configurada no servidor. Adicione nas variáveis de ambiente do Vercel.' });
+  const groqKey = process.env.GROQ_API_KEY;
+  const nvidiaKey = process.env.NVIDIA_API_KEY;
+
+  if (!groqKey && !nvidiaKey) {
+    return res.status(500).json({ error: 'Nenhuma chave de API (GROQ_API_KEY ou NVIDIA_API_KEY) configurada no servidor.' });
+  }
+
+  let apiUrl = 'https://integrate.api.nvidia.com/v1/chat/completions';
+  let authHeader = `Bearer ${nvidiaKey}`;
+  let modelName = 'meta/llama-3.1-70b-instruct';
+
+  if (groqKey) {
+    apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+    authHeader = `Bearer ${groqKey}`;
+    modelName = 'llama-3.1-70b-versatile';
   }
 
   const { systemPrompt, userPrompt } = req.body;
@@ -26,14 +38,14 @@ export default async function handler(req, res) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
-    const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': authHeader
       },
       body: JSON.stringify({
-        model: 'meta/llama-3.1-70b-instruct',
+        model: modelName,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }

@@ -151,7 +151,7 @@ function validateAndFixTeams(teamA, teamB, playersList) {
   return { teamA: cleanA, teamB: cleanB };
 }
 
-export async function generateBalancedTeams(players, stats, restrictions, naturalLanguageRules) {
+export async function generateBalancedTeams(players, restrictions, naturalLanguageRules, currentUserName = null) {
   // Shuffle players list to ensure randomness and avoid repeating identical team draws
   const shuffledPlayers = shuffleArray(players);
   const playerIds = players.map(p => p.id);
@@ -164,10 +164,15 @@ export async function generateBalancedTeams(players, stats, restrictions, natura
     description: r.description || ''
   }));
 
-  const system = `Você é um assistente encarregado de sortear os times de uma pelada de futebol.
+  let system = `Você é um assistente encarregado de sortear os times de uma pelada de futebol.
 Sua principal tarefa é dividir os jogadores fornecidos em 2 times ("teamA" e "teamB") respeitando as restrições de duplas e regras adicionais em linguagem natural fornecidas pelo usuário.
+`;
 
-REGRAS CRÍTICAS:
+  if (currentUserName) {
+    system += `\nO usuário logado que está realizando o sorteio e digitando as regras se chama "${currentUserName}". Se as regras do usuário contiverem pronomes como "eu", "mim", "meu", "comigo", "minha dupla", etc., você DEVE associar esses pronomes ao jogador "${currentUserName}" (ou seja, quando ele diz "eu no time A", significa colocar o jogador "${currentUserName}" no Time A).\n`;
+  }
+
+  system += `\nREGRAS CRÍTICAS:
 1. REGRAS EM LINGUAGEM NATURAL: Priorize totalmente e de forma estrita as regras em linguagem natural inseridas pelo usuário (ex: "fulano e ciclano no mesmo time", "goleiros separados", "João no time A", etc.). 
    Se o usuário digitar regras de agrupamento ou separação, você DEVE cumpri-las.
 2. MAPEAMENTO DE NOMES: Se a regra em linguagem de usuário mencionar um nome parcial ou apelido (ex: "Beto"), mapeie de forma inteligente para o jogador correspondente (ex: "Carlos Roberto (Beto)").

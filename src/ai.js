@@ -166,6 +166,10 @@ export async function generateBalancedTeams(players, restrictions, naturalLangua
     description: r.description || ''
   }));
 
+  const totalCount = shuffledPlayers.length;
+  const targetSizeA = Math.ceil(totalCount / 2);
+  const targetSizeB = totalCount - targetSizeA;
+
   let system = `Você é um assistente encarregado de sortear os times de uma pelada de futebol.
 Sua principal tarefa é dividir os jogadores fornecidos em 2 times ("teamA" e "teamB") respeitando as restrições de duplas e regras adicionais em linguagem natural fornecidas pelo usuário.
 `;
@@ -181,7 +185,7 @@ Sua principal tarefa é dividir os jogadores fornecidos em 2 times ("teamA" e "t
 3. RESTRIÇÕES DE DUPLAS: Respeite a lista de restrições (jogadores que não podem ficar no mesmo time).
 4. EQUILÍBRIO TÉCNICO: Divida os times de forma equilibrada! O somatório do OVR (Overall) e a média da taxa de vitórias (winRate) de cada time devem ser os mais próximos possíveis para garantir competitividade.
 5. DISTRIBUIÇÃO TOTAL: Todos os IDs de jogadores fornecidos na lista de disponíveis devem ser distribuídos. Nenhum jogador pode ficar de fora.
-6. EQUILÍBRIO DE QUANTIDADE: O Time A (teamA) e o Time B (teamB) devem ter exatamente o mesmo número de jogadores (ou diferença de no máximo 1 jogador se for ímpar).
+6. EQUILÍBRIO DE QUANTIDADE: Distribua os jogadores de modo que o Time A (teamA) e o Time B (teamB) tenham exatamente os tamanhos definidos na instrução do usuário.
 7. ALEATORIEDADE: Faça um sorteio real com base nas regras. Mude as composições dos times a cada chamada se os mesmos jogadores forem passados, mantendo apenas as regras fixas respeitadas.
 
 RESPOSTA: Retorne APENAS um JSON válido com esta estrutura exata (sem markdown, sem backticks \`\`\`json):
@@ -195,6 +199,11 @@ RESPOSTA: Retorne APENAS um JSON válido com esta estrutura exata (sem markdown,
 
   const user = `Jogadores disponíveis (com OVR e winRate para equilíbrio):
 ${JSON.stringify(shuffledPlayers.map(p => ({ id: p.id, name: p.name, position: p.position, ovr: p.ovr || 60, winRate: p.winRate || 50 })), null, 2)}
+
+DISTRIBUIÇÃO OBRIGATÓRIA DE QUANTIDADE:
+- O Time A (teamA) DEVE conter exatamente ${targetSizeA} jogadores.
+- O Time B (teamB) DEVE conter exatamente ${targetSizeB} jogadores.
+Você deve distribuir todos os jogadores de forma que nenhum fique de fora e os tamanhos dos times sejam exatamente os listados acima.
 
 Restrições (não podem ficar no mesmo time):
 ${JSON.stringify(formattedRestrictions, null, 2)}

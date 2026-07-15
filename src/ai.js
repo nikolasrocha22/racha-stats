@@ -49,27 +49,71 @@ function extractJSON(text) {
   throw new Error("JSON não encontrado na resposta.");
 }
 
-function validateAndFixTeams(teamA, teamB, allPlayerIds) {
+function validateAndFixTeams(teamA, teamB, playersList) {
+  const allPlayerIds = playersList.map(p => p.id);
   const setAll = new Set(allPlayerIds);
   
-  // 1. Remove duplicates and invalid IDs
+  // Create a map of lowercase names/nicknames to IDs for matching
+  const nameMap = new Map();
+  for (const p of playersList) {
+    const nameLower = (p.name || '').toLowerCase().trim();
+    const nicknameLower = (p.nickname || '').toLowerCase().trim();
+    if (nameLower) nameMap.set(nameLower, p.id);
+    if (nicknameLower) nameMap.set(nicknameLower, p.id);
+    
+    // Also try matching first name
+    const firstName = nameLower.split(' ')[0];
+    if (firstName && !nameMap.has(firstName)) {
+      nameMap.set(firstName, p.id);
+    }
+  }
+
+  const resolveToId = (item) => {
+    if (item === null || item === undefined) return null;
+    
+    // If it's already a number in our set, return it
+    const num = Number(item);
+    if (!isNaN(num) && setAll.has(num)) {
+      return num;
+    }
+    
+    // If it's a string, try matching by name
+    if (typeof item === 'string') {
+      const cleanItem = item.toLowerCase().trim();
+      if (nameMap.has(cleanItem)) {
+        return nameMap.get(cleanItem);
+      }
+      
+      // Try to find if any player name contains this string
+      for (const p of playersList) {
+        const name = (p.name || '').toLowerCase();
+        const nickname = (p.nickname || '').toLowerCase();
+        if (name.includes(cleanItem) || nickname.includes(cleanItem)) {
+          return p.id;
+        }
+      }
+    }
+    return null;
+  };
+
+  // 1. Resolve and remove duplicates and invalid items
   const seen = new Set();
   let cleanA = [];
   let cleanB = [];
   
-  for (const id of (teamA || [])) {
-    const numId = isNaN(id) ? id : Number(id);
-    if (setAll.has(numId) && !seen.has(numId)) {
-      cleanA.push(numId);
-      seen.add(numId);
+  for (const item of (teamA || [])) {
+    const resolvedId = resolveToId(item);
+    if (resolvedId && !seen.has(resolvedId)) {
+      cleanA.push(resolvedId);
+      seen.add(resolvedId);
     }
   }
   
-  for (const id of (teamB || [])) {
-    const numId = isNaN(id) ? id : Number(id);
-    if (setAll.has(numId) && !seen.has(numId)) {
-      cleanB.push(numId);
-      seen.add(numId);
+  for (const item of (teamB || [])) {
+    const resolvedId = resolveToId(item);
+    if (resolvedId && !seen.has(resolvedId)) {
+      cleanB.push(resolvedId);
+      seen.add(resolvedId);
     }
   }
   
@@ -204,7 +248,7 @@ ${naturalLanguageRules || 'Nenhuma'}`;
     impossible = parsed.impossible || null;
 
     // Apply strict validation & fixing on the AI output to prevent bugs, missing players, or uneven splits
-    const fixed = validateAndFixTeams(rawA, rawB, playerIds);
+    const fixed = validateAndFixTeams(rawA, rawB, shuffledPlayers);
     teamA = fixed.teamA;
     teamB = fixed.teamB;
 

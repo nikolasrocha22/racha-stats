@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   if (groqKey) {
     apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
     authHeader = `Bearer ${groqKey}`;
-    modelName = 'llama-3.1-70b-versatile';
+    modelName = 'llama-3.3-70b-versatile';
   }
 
   const { systemPrompt, userPrompt } = req.body;

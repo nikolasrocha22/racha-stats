@@ -63,7 +63,10 @@ export default function TeamDraw() {
   const { user } = useOutletContext();
   const players = useLiveQuery(() => db.players.orderBy('name').toArray());
   const restrictions = useLiveQuery(() => db.restrictions.toArray());
-  const currentPlayer = (players || []).find(p => p.user_id === user?.id);
+  const emailPrefix = user?.email ? user.email.split('@')[0].split('.')[0].toLowerCase().trim() : '';
+  const currentPlayer = (players || []).find(p => p.user_id === user?.id) ||
+                        (players || []).find(p => (p.nickname || p.name || '').toLowerCase().trim() === emailPrefix) ||
+                        (players || []).find(p => (p.nickname || p.name || '').toLowerCase().includes(emailPrefix));
   const currentUserName = currentPlayer ? (currentPlayer.nickname || currentPlayer.name) : null;
 
   const [selected, setSelected] = useState([]);

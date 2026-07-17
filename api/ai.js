@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
   let apiUrl = 'https://integrate.api.nvidia.com/v1/chat/completions';
   let authHeader = `Bearer ${nvidiaKey}`;
-  let modelName = 'meta/llama-3.1-70b-instruct';
+  let modelName = 'meta/llama-3.3-70b-instruct';
 
   if (groqKey) {
     apiUrl = 'https://api.groq.com/openai/v1/chat/completions';

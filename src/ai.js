@@ -179,8 +179,7 @@ Sua principal tarefa é dividir os jogadores fornecidos em 2 times ("teamA" e "t
   }
 
   system += `\nREGRAS CRÍTICAS:
-1. REGRAS EM LINGUAGEM NATURAL: Priorize totalmente e de forma estrita as regras em linguagem natural inseridas pelo usuário (ex: "fulano e ciclano no mesmo time", "goleiros separados", "João no time A", etc.). 
-   Se o usuário digitar regras de agrupamento ou separação, você DEVE cumpri-las.
+1. REGRAS EM LINGUAGEM NATURAL (ORDENS ABSOLUTAS): Priorize totalmente e de forma estrita as regras em linguagem de usuário (ex: "fulano e ciclano no mesmo time", "João no time A", "Nikolas no time B"). Se o usuário digitar uma regra, ela é uma ORDEM ABSOLUTA. Você DEVE cumpri-la acima de qualquer critério de equilíbrio técnico ou preferência do modelo. Se ele disser "Nikolas no time B", coloque o ID correspondente a Nikolas no array "teamB".
 2. MAPEAMENTO DE NOMES: Se a regra em linguagem de usuário mencionar um nome parcial ou apelido (ex: "Beto"), mapeie de forma inteligente para o jogador correspondente (ex: "Carlos Roberto (Beto)").
 3. RESTRIÇÕES DE DUPLAS: Respeite a lista de restrições (jogadores que não podem ficar no mesmo time).
 4. EQUILÍBRIO TÉCNICO: Divida os times de forma equilibrada! O somatório do OVR (Overall) e a média da taxa de vitórias (winRate) de cada time devem ser os mais próximos possíveis para garantir competitividade.
@@ -190,6 +189,7 @@ Sua principal tarefa é dividir os jogadores fornecidos em 2 times ("teamA" e "t
 
 RESPOSTA: Retorne APENAS um JSON válido com esta estrutura exata (sem markdown, sem backticks \`\`\`json):
 {
+  "reasoning": "Seu raciocínio detalhado passo a passo na primeira pessoa, planejando a distribuição dos jogadores para satisfazer TODAS as regras do usuário e restrições antes de preencher os arrays",
   "teamA": [lista de IDs dos jogadores],
   "teamB": [lista de IDs dos jogadores],
   "announcement": "Texto divertido e empolgante anunciando os times, como um narrador profissional de TV",
